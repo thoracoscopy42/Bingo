@@ -16,13 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from bingo.views import home # tu import nazwy z patha z appki (komentarz do pierwszego żebyśmy wiedzieli jak uzywać potem usunąć)
-import bingo.views as views # import widoków z bingo.views żeby móc użyć login_page
+from bingo.views import home,login_page # tu import nazwy z patha z appki (komentarz do pierwszego żebyśmy wiedzieli jak uzywać potem usunąć)
 
 urlpatterns = [
     path("", home,name='home'), # dodane Landing page które ma nazwę home (komentarz do pierwszego żebyśmy wiedzieli jak uzywać potem usunąć)
-    path("login/", views.login_page, name="login"),
+    path("login/", login_page, name="login"),
     path('admin/', admin.site.urls),
 ]
-
-#dodalem nazwe do sciezki na home inaczej strona z logowaniem sie nie odpalala bo mam tam guzik na powrot na glowna - to do omowienia ale mozna wywalic
