@@ -15,3 +15,6 @@ def home(request):
     nextpage = (request.method == "POST")
     
     return render(request, "home.html", {"clicked": clicked}) # tutaj też trzeba dodać żeby zwracało ten clicked i wtedy działa popup
+def login_page(request):
+    return render(request, "login.html")
+    #ro ma wspolgrac z login html w templates aby logowanie dzialalo (info na pozniej)

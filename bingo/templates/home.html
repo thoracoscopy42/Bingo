@@ -3,5 +3,9 @@
 {% block content %}
   <h1>MEOW:3</h1>
   <button id="alert-btn">BŁAGAM KLIKNIJ WE MNIE</button>
+
+<a href="{% url 'login' %}">
+    <button type="button">Miejsce logowania dla ultra sigiemek</button>
+</a>
 {% endblock %}
-<!-- tu zrobic logowanie -->
+<!-- dodany guzik na strone logowania przesunalem endblock bo by nie zaczytalo-->
