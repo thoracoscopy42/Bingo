@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="page">
+  <section class="hero">
+    <div class="glow glow--a"></div>
+    <div class="glow glow--b"></div>
+
+    <header class="hero__header">
+      <div class="logo" aria-hidden="true">B</div>
+      <h1 class="title">Bingo</h1>
+    </header>
+
+    <div class="panel">
+      <div class="panel__top">
+        <h2 class="panel__title">Log in</h2>
+        <span class="panel__pill">AUTH</span>
+      </div>
+
+      {% if form.non_field_errors %}
+        <div class="form__error">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <form method="post" class="form">
+        {% csrf_token %}
+
+        <div class="field">
+          <input
+            class="field__input"
+            type="text"
+            name="username"
+            placeholder="login"
+            autocomplete="username"
+            autofocus
+            required
+          />
+        </div>
+
+        <div class="field">
+          <input
+            class="field__input"
+            type="password"
+            name="password"
+            placeholder="password"
+            autocomplete="current-password"
+            required
+          />
+        </div>
+
+        {% if next %}
+          <input type="hidden" name="next" value="{{ next }}">
+        {% endif %}
+
+        <div class="actions">
+          <button class="btn btn--primary" type="submit">Log in</button>
+        </div>
+      </form>
+
+      <p class="fineprint">
+        Masz konto z puli? Zaloguj się hasłem tymczasowym.
+      </p>
+    </div>
+  </section>
+</main>
+{% endblock %}
