@@ -6,4 +6,7 @@ from django.shortcuts import render
 
 
 def home(request):
-    return render(request, "home.html")
+
+    clicked = (request.method == "POST") # tu trzeba było dodać żeby zwracało metodą POST (są 2 główne GET i POST poczytaj sobie - to do wywalenia potem)
+
+    return render(request, "home.html", {"clicked": clicked}) # tutaj też trzeba dodać żeby zwracało ten clicked i wtedy działa popup
