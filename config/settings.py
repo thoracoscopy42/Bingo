@@ -27,6 +27,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
+#login redirect to our page
+
 
 # Application definition
 
