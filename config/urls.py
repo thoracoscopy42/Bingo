@@ -19,8 +19,9 @@ from django.urls import path, include
 from bingo.views import home,game # tu import nazwy z patha z appki (komentarz do pierwszego żebyśmy wiedzieli jak uzywać potem usunąć)
 
 urlpatterns = [
-    path("", home,name='home'), # dodane Landing page które ma nazwę home (komentarz do pierwszego żebyśmy wiedzieli jak uzywać potem usunąć)
+    path("", home,name='home'),
     path('admin/', admin.site.urls),
     path("game/", game, name="game"), 
     path("accounts/", include("django.contrib.auth.urls")), # dodane game page które ma nazwę game (komentarz do pierwszego żebyśmy wiedzieli jak uzywać potem usunąć)
 ]
+
