@@ -16,7 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from bingo.views import home # tu import nazwy z patha z appki (komentarz do pierwszego żebyśmy wiedzieli jak uzywać potem usunąć)
 
 urlpatterns = [
+    path("", home), # dodane Landing page które ma nazwę home (komentarz do pierwszego żebyśmy wiedzieli jak uzywać potem usunąć)
     path('admin/', admin.site.urls),
 ]

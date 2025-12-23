@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <h1>Meow:3</h1>
+
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" name="action" value="alert">BŁAGAM KLIKNIJ WE MNIE</button> 
+      <!-- tu wyżej kosmetyczna zmiana -->
+    </form>
+
+    {% if clicked %}
+      <script>alert("YIPIEE!!!")</script>
+    {% endif %}
+  </body>
+</html>
