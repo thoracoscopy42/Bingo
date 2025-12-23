@@ -9,6 +9,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   btn.addEventListener("click", () => {
-    alert("KSYPRO TO GRZECZNY CHŁOPIEC");
+    alert("KSYPRO TO GRZECZNY CHŁOPIEC I JEGO DZIEWCZYNA MA 12 LAT");
   });
   });

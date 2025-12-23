@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Logowanie</h1>
+
+<form method="post">
+    {% csrf_token %}
+    <div>
+        <label for="login">OG NAZWA Z DISCORDA PAPAYA:</label>
+        <input type="text" id="login" name="login">
+    </div>
+
+    <div>
+        <label for="password">Hasło:</label>
+        <input type="password" id="password" name="password">
+    </div>
+
+    <button type="submit">Zaloguj</button>
+</form>
+
+<a href="{% url 'home' %}">Powrót na stronę główną</a>
+{% endblock %}
+<!-- zrobilem osobna ale jestem w stanie przeniesc na glowna strone-->
