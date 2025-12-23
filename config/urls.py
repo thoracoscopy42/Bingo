@@ -20,6 +20,5 @@ from bingo.views import home,login_page # tu import nazwy z patha z appki (komen
 
 urlpatterns = [
     path("", home,name='home'), # dodane Landing page które ma nazwę home (komentarz do pierwszego żebyśmy wiedzieli jak uzywać potem usunąć)
-    path("login/", login_page, name="login"),
     path('admin/', admin.site.urls),
 ]
