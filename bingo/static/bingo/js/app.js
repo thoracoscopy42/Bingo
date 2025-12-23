@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
+  
+  
   const btn = document.getElementById("alert-btn");
 
   if (!btn) {
