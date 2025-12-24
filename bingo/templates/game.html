@@ -151,10 +151,16 @@
   });
   //czarny dropdown
   (function enhanceDropdowns(){
-  const selects = document.querySelectorAll("select.cell-user--inside");
+  const wrappers = new Set();
 
-  selects.forEach(select => {
-    // offscreen + nieklikalny => natywny dropdown nie ma jak się otworzyć
+  function closeAll(exceptWrapper = null){
+    document.querySelectorAll(".cd--open").forEach(w => {
+      if (w !== exceptWrapper) w.classList.remove("cd--open");
+    });
+  }
+
+  function enhanceOne(select){
+    // offscreen + nieklikalny => natywny select nie otworzy się nigdy
     select.setAttribute("aria-hidden", "true");
     select.tabIndex = -1;
     select.style.position = "absolute";
@@ -165,9 +171,11 @@
     select.style.pointerEvents = "none";
 
     const wrapper = select.closest(".cell-wrapper");
+    if (!wrapper) return;
     wrapper.classList.add("cd");
+    wrappers.add(wrapper);
 
-    // nie twórz drugi raz
+    // nie dubluj
     if (wrapper.querySelector(".cd__button")) return;
 
     const btn = document.createElement("button");
@@ -182,6 +190,7 @@
       btn.textContent = opt ? opt.text : "—";
     }
 
+    // opcje
     [...select.options].forEach(opt => {
       const div = document.createElement("div");
       div.className = "cd__option";
@@ -198,22 +207,35 @@
       list.appendChild(div);
     });
 
+    // toggle listy
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      document.querySelectorAll(".cd--open").forEach(el => el.classList.remove("cd--open"));
-      wrapper.classList.toggle("cd--open");
+      const isOpen = wrapper.classList.contains("cd--open");
+      closeAll(wrapper);
+      wrapper.classList.toggle("cd--open", !isOpen);
     });
+
+    // klik w listę nie zamyka przez document click
+    list.addEventListener("click", (e) => e.stopPropagation());
 
     wrapper.appendChild(btn);
     wrapper.appendChild(list);
     syncFromSelect();
-  });
+  }
 
-  document.addEventListener("click", () => {
-    document.querySelectorAll(".cd--open").forEach(el => el.classList.remove("cd--open"));
+  // init
+  document.querySelectorAll("select.cell-user--inside").forEach(enhanceOne);
+
+  // zamykanie kliknięciem poza
+  document.addEventListener("click", () => closeAll(null));
+
+  // ESC zamyka
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeAll(null);
   });
 })();
+
 
 
 

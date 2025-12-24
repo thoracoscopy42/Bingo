@@ -486,59 +486,87 @@ body::after{
   background: rgba(255, 45, 45, .96);
 }
 
+/* =========================
+   CUSTOM DROPDOWN (JS)
+   ========================= */
 
-
-/* === CZARNY DROPDOWN === */
-
-.cd{
+/* wrapper po enhancingu dostaje .cd */
+.cd.cell-wrapper{
   position: relative;
+  overflow: visible !important;     /* nie tnij listy */
 }
 
+/* usuń historyczną strzałkę z wrappera, bo button ma własną */
+.cd.cell-wrapper::after{
+  content: none !important;
+}
+
+/* przycisk zamiast natywnego selecta */
 .cd__button{
   width: 100%;
-  background:
-    radial-gradient(500px 120px at 10% 20%, rgba(76,125,255,.14), transparent 60%),
-    rgba(0,0,0,.22);
   border: 0;
   border-top: 1px solid rgba(255,255,255,.10);
   padding: 10px 40px 10px 14px;
-  color: rgba(234,240,255,.88);
   font-size: 13px;
+  color: rgba(234,240,255,.86);
   text-align: left;
   cursor: pointer;
+
+  background:
+    radial-gradient(500px 120px at 10% 20%, rgba(76,125,255,.14), transparent 60%),
+    rgba(0,0,0,.18);
 }
 
+.cd__button:focus{
+  outline: none;
+}
+
+/* strzałka na buttonie */
 .cd__button::after{
   content: "▾";
   position: absolute;
   right: 14px;
-  bottom: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
   color: rgba(234,240,255,.55);
+  pointer-events: none;
 }
 
+/* lista opcji POD przyciskiem + animacja */
 .cd__list{
   position: absolute;
   left: 8px;
   right: 8px;
-  bottom: calc(100% + 6px);
-  background: rgba(8,10,20,.98);
+  top: calc(100% + 6px);
+
+  background: #05060b;
   border: 1px solid rgba(255,255,255,.12);
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0,0,0,.6);
-  max-height: 220px;
+
+  max-height: 240px;
   overflow-y: auto;
-  z-index: 30;
-  display: none;
+  z-index: 999;
+
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease;
 }
 
 .cd--open .cd__list{
-  display: block;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
 }
 
+/* opcje */
 .cd__option{
   padding: 10px 12px;
   cursor: pointer;
   font-size: 13px;
+  color: rgba(234,240,255,.92);
 }
 
 .cd__option:hover{
@@ -547,39 +575,4 @@ body::after{
 
 .cd__option--muted{
   color: rgba(234,240,255,.45);
-}
-
-.cd__list{
-  background: #05060b !important;
-  color: rgba(234,240,255,.92) !important;
-}
-
-.cd__option{
-  background: transparent !important;
-  color: rgba(234,240,255,.92) !important;
-}
-.cd__option:hover{
-  background: rgba(255,255,255,.08) !important;
-}
-
-.cd.cell-wrapper::after{ content: none !important; }
-
-/* custom dropdown musi móc wyjść poza wrapper (inaczej overflow: hidden go ucina) */
-.cd.cell-wrapper{
-  overflow: visible !important;
-}
-
-/* strzałka wrappera ma zniknąć przy custom (bo button ma własną) */
-.cd.cell-wrapper::after{
-  content: none !important;
-}
-
-/* zachowaj “ładne rogi” mimo overflow: visible */
-.cd .grid-cell--with-select{
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-}
-.cd .cd__button{
-  border-bottom-left-radius: 16px;
-  border-bottom-right-radius: 16px;
 }
