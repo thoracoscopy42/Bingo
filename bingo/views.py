@@ -11,6 +11,6 @@ class LandingLoginView(LoginView):
     template_name = "registration/login.html"
     redirect_authenticated_user = True
 
-
+@login_required
 def game(request):
     return render(request, "game.html", {"rows": range(4), "cols": range(4)})
