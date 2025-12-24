@@ -15,17 +15,9 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-wb6615*u^e2l-uepu!ecr=1knygpu1ndk94f*j6fib2w74jzlo'
-
-# SECURITY WARNING: don't run with debug turned on in production!
+SECRET_KEY = os.environ.get('SECRET_KEY')#'django-insecure-wb6615*u^e2l-uepu!ecr=1knygpu1ndk94f*j6fib2w74jzlo'
 DEBUG = False
-
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ['*']
 
 
 # import os
@@ -33,13 +25,7 @@ ALLOWED_HOSTS = ["*"]
 # SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-secret-key")
 # DEBUG = os.environ.get("DEBUG", "True") == "True"
 
-# # ALLOWED_HOSTS: wspiera Render (RENDER_EXTERNAL_HOSTNAME) i fallback z env
-# render_host = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
-# if render_host:
-#     ALLOWED_HOSTS = [render_host]
-# else:
-#     ALLOWED_HOSTS = [h for h in os.environ.get("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if h]
-# #login redirect to our page
+
 
 
 # Application definition
@@ -98,10 +84,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'koyebdb',
-        'USER': 'koyeb-adm',
-        'PASSWORD': 'npg_17bgNThCLSKk',
-        'HOST': 'ep-crimson-mouse-agieznln.c-2.eu-central-1.pg.koyeb.app',
+        'NAME': os.environ.get('NAME'),
+        'USER': os.environ.get('USER'),
+        'PASSWORD': os.environ.get('PASSWORD'),
+        'HOST': os.environ.get('HOST'),
         'OPTIONS': {'sslmode': 'require'},
     }
 }
