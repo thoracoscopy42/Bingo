@@ -1,0 +1,23 @@
+Algorytm losujący
+
+
+
+MAIN {
+        1) Nie możesz wylosować zadania z samym sobą
+        
+        2) Możesz wylosować zadania z daną osobą maksymalnie dwa razy na jednego BingoBoarda
+        
+        3) Losowanie zawsze jest z całej puli oprócz powyższych punktów
+        
+        4) Losowanie wyklucza w tej samej iteracji elementy które zostały już użyte 
+}
+
+SIDENOTE {
+
+        1) Zrobić jakiś counter wylosowanych zadań i wyłączać je z puli, kiedy przekroczą liczbę wylosowań - np. więcej niż 2  
+
+        2) Userzy mogą losować(reroll system) 3 BingoBoardy i swobodnie się między nimi swapować
+
+        2.1) Userzy mogą sufflować 2 razy każdy BingoBoard (permanent reroll) [gambling]
+
+}
