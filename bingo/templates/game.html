@@ -278,19 +278,26 @@
   });
 })();
 
-
-
-
   loadSavedGrid();
 
-  function burstConfetti(count = 50){
+ function burstConfetti(count = 70){
+  const table = document.querySelector(".grid-table");
+  if (!table) return;
+
+  const rect = table.getBoundingClientRect();
+
+  // X-y startowe przy krawędziach tabeli (trochę na zewnątrz)
+  const leftX  = rect.left - 10;
+  const rightX = rect.right + 10;
+
+  // "podłoga" = dół widocznego ekranu (viewport)
+  const floorY = window.innerHeight + 6;
+
   const wrap = document.createElement("div");
   wrap.className = "confetti";
   document.body.appendChild(wrap);
 
-  const colors = ["#2AFF8C", "#00CDB4", "#FFFFFF", "#4C7DFF"];
-
-  const startY = window.innerHeight * 0.25; // <<< KLUCZ: 3/4 od dołu
+  const colors = ["#2AFF8C", "#00CDB4", "#FFFFFF", "#4C7DFF", "#FFD24C"];
 
   for (let i = 0; i < count; i++){
     const p = document.createElement("span");
@@ -298,30 +305,45 @@
 
     const fromLeft = Math.random() < 0.5;
 
-    // START
-    p.style.top  = startY + (Math.random() * 40 - 20) + "px";
-    p.style.left = fromLeft ? "-20px" : "calc(100vw + 20px)";
+    // START: dwa „emitery” przy krawędziach tabeli
+    const startX = (fromLeft ? leftX : rightX) + (Math.random() * 20 - 10);
+    const startY = floorY + (Math.random() * 10);
 
-    // RUCH (do środka + lekko w dół)
-    const dx = fromLeft
-      ? (Math.random() * 40 + 30) + "vw"
-      : -(Math.random() * 40 + 30) + "vw";
+    p.style.left = startX + "px";
+    p.style.top  = startY + "px";
 
-    const dy  = Math.random() * 120 + 60 + "px";
-    const rot = (Math.random() * 720 - 360) + "deg";
-    const dur = Math.random() * 0.6 + 0.8;
+    // RUCH:
+    // - w górę (ujemny dy)
+    // - lekko na boki (dx): lewy emiter bardziej w lewo, prawy bardziej w prawo
+    const dx = (fromLeft ? -1 : 1) * (Math.random() * 180 + 80); // px
+    const dy = -(Math.random() * 520 + 380);                     // px (mocny strzał w górę)
 
-    p.style.background = colors[Math.floor(Math.random() * colors.length)];
-    p.style.setProperty("--dx", dx);
-    p.style.setProperty("--dy", dy);
+    const rot = (Math.random() * 900 - 450) + "deg";
+    const dur = (Math.random() * 0.55 + 0.95); // 0.95..1.5s
+    const delay = Math.random() * 0.06;
+
+    // losowy rozmiar (trochę żywiej)
+    const w = Math.random() * 6 + 6;    // 6..12
+    const h = Math.random() * 10 + 10;  // 10..20
+
+    p.style.width = w + "px";
+    p.style.height = h + "px";
+    p.style.background = colors[(Math.random() * colors.length) | 0];
+
+    p.style.setProperty("--dx", dx + "px");
+    p.style.setProperty("--dy", dy + "px");
     p.style.setProperty("--rot", rot);
+
     p.style.animationDuration = dur + "s";
+    p.style.animationDelay = delay + "s";
 
     wrap.appendChild(p);
   }
 
+  // sprzątanie po animacji
   setTimeout(() => wrap.remove(), 1800);
 }
+
 
 
 

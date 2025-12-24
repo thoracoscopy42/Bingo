@@ -620,13 +620,13 @@ body::after{
 }
 
 
-/* === CONFETTI: start z boku === */
+/* === CONFETTI: floor burst przy tabeli === */
 .confetti{
   position: fixed;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 9998;
+  z-index: 9998; /* pod toastem */
 }
 
 .confetti__piece{
@@ -635,15 +635,14 @@ body::after{
   height: 14px;
   border-radius: 3px;
   opacity: .95;
-
-  animation: confetti-side linear forwards;
+  transform: translate3d(0,0,0) rotate(0deg);
+  animation: confetti-floor linear forwards;
+  will-change: transform, opacity;
 }
 
-@keyframes confetti-side{
+@keyframes confetti-floor{
   to{
-    transform:
-      translate3d(var(--dx), var(--dy), 0)
-      rotate(var(--rot));
+    transform: translate3d(var(--dx), var(--dy), 0) rotate(var(--rot));
     opacity: 1;
   }
 }
