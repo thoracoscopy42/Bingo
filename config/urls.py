@@ -23,7 +23,6 @@ from bingo.views import raffle
 
 
 urlpatterns = [
-
     path("", LandingLoginView.as_view(), name="landing_login"),
     path("accounts/login/", LandingLoginView.as_view(), name="login"),
     path('admin/', admin.site.urls),

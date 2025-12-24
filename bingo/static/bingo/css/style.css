@@ -588,3 +588,39 @@ body::after{
 .cd__option--muted{
   color: rgba(234,240,255,.45);
 }
+
+.toast{
+  position: sticky;
+  top: 10px;
+  z-index: 50;
+  margin: 10px 0 14px 0;
+
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+
+  font-weight: 600;
+  font-size: 14px;
+
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.toast--show{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast--success{
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #a7f3d0;
+}
+
+.toast--error{
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fecaca;
+}
