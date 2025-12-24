@@ -27,6 +27,18 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
+
+import os
+
+SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-secret-key")
+DEBUG = os.environ.get("DEBUG", "True") == "True"
+
+# ALLOWED_HOSTS: wspiera Render (RENDER_EXTERNAL_HOSTNAME) i fallback z env
+render_host = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+if render_host:
+    ALLOWED_HOSTS = [render_host]
+else:
+    ALLOWED_HOSTS = [h for h in os.environ.get("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if h]
 #login redirect to our page
 
 
