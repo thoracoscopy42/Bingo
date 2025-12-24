@@ -1,5 +1,5 @@
 from django.shortcuts import redirect
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 
 class ForcePasswordChangeMiddleware:
     def __init__(self, get_response):
@@ -8,12 +8,18 @@ class ForcePasswordChangeMiddleware:
     def __call__(self, request):
         if request.user.is_authenticated:
             prof = getattr(request.user, "userprofile", None)
+
             if prof and prof.must_change_password:
-                allowed = {
-                    reverse("password_change"),        # /accounts/password_change/
-                    reverse("password_change_done"),   # /accounts/password_change/done/
-                    reverse("logout"),                 # /accounts/logout/
-                }
+                try:
+                    allowed = {
+                        reverse("password_change"),
+                        reverse("password_change_done"),
+                        reverse("logout"),
+                    }
+                except NoReverseMatch:
+                    return self.get_response(request)
+
                 if request.path not in allowed:
                     return redirect("password_change")
+
         return self.get_response(request)

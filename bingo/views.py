@@ -23,7 +23,8 @@ class FirstPasswordChangeView(PasswordChangeView):
 
     def form_valid(self, form):
         resp = super().form_valid(form)
-        prof = self.request.user.userprofile
-        prof.must_change_password = False
-        prof.save(update_fields=["must_change_password"])
+        prof = getattr(self.request.user, "userprofile", None)
+        if prof:
+            prof.must_change_password = False
+            prof.save(update_fields=["must_change_password"])
         return resp
