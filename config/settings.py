@@ -119,5 +119,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+#redirecty po loginie logoucie itd.
+
+LOGIN_URL = "/"
 LOGIN_REDIRECT_URL = "/game/"
+LOGOUT_REDIRECT_URL = "/"
 

@@ -6,14 +6,20 @@
     <div class="panel panel--wide">
 
       <div class="panel__top">
-        <p class="panel__title">Gra 4×4</p>
-        <span class="panel__pill">Panel</span>
-      </div>
-
-      <div class="panel__top" style="justify-content:center; margin-bottom: 10px;">
         <span class="panel__pill">
           Zalogowany jako: {{ request.user.username }}
         </span>
+        <div class="panel__top">
+          <span class="panel__pill">
+            Zalogowany jako: {{ request.user.username }}
+          </span>
+        </div>
+
+        <form method="post" action="{% url 'logout' %}" class="logout-form">
+          {% csrf_token %}
+          <button type="submit" class="btn btn--danger">Wyloguj</button>
+        </form>
+
       </div>
 
       <form>
