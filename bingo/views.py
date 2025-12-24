@@ -66,7 +66,7 @@ def save_board(request):
 
     return JsonResponse({"ok": True})
 @login_required
-def raffle_view(request):
+def raffle(request):
     user = request.user
 
     # bierzemy wszystkie boardy innych użytkowników
