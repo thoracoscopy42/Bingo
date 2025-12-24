@@ -110,7 +110,7 @@ def raffle(request):
     used = set()
     per_person = Counter()
 
-    TARGET = 16
+    TARGET = 9
 
     for item in pool:
         if len(chosen) >= TARGET:
@@ -133,5 +133,5 @@ def raffle(request):
     while len(chosen) < TARGET:
         chosen.append(None)
 
-    grid = [chosen[i:i+4] for i in range(0, TARGET, 4)]
+    grid = [chosen[i:i+3] for i in range(0, TARGET, 3)]
     return render(request, "raffle.html", {"grid": grid})

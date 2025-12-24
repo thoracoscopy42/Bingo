@@ -8,16 +8,8 @@
     {% for cell in row %}
     <td>
       <div class="cell-wrapper">
-        <div class="grid-cell grid-cell--with-select" style="min-height: 96px; white-space: pre-wrap;">
+        <div class="grid-cell" style="min-height: 96px; white-space: pre-wrap;">
           {% if cell %}{{ cell.text }}{% else %}—{% endif %}
-        </div>
-        <div class="cell-user cell-user--inside">
-          {% if cell %}
-            Przypisany: {{ cell.assigned_user|default:"—" }}
-          {% else %}
-            Brak w puli
-          {% endif %}
-        </div>
       </div>
     </td>
     {% endfor %}
