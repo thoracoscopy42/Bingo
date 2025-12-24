@@ -625,7 +625,7 @@ body::after{
 /* ===== RAFFLE BINGO BOARD ===== */
 
 .raffle-board{
-  width: min(820px, 94vw);
+  width: min(620px, 88vw);
   margin: 14px auto 0;
   padding: 18px;
   border-radius: 26px;
