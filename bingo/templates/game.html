@@ -5,10 +5,21 @@
   <div class="hero hero--wide">
     <div class="panel panel--wide">
 
-      <div class="panel__top" style="justify-content:center;">
+      <div class="panel__top">
         <span class="panel__pill">
           Zalogowany jako: {{ request.user.username }}
         </span>
+        <div class="panel__top">
+          <span class="panel__pill">
+            Zalogowany jako: {{ request.user.username }}
+          </span>
+        </div>
+
+        <form method="post" action="{% url 'logout' %}" class="logout-form">
+          {% csrf_token %}
+          <button type="submit" class="btn btn--danger">Wyloguj</button>
+        </form>
+
       </div>
 
       <form>

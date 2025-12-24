@@ -466,3 +466,22 @@ body::after{
   color: rgba(234,240,255,.92);
   font-size: 14px;
 }
+
+/* Logout button pinned to edge */
+.logout-form{
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 50;
+}
+
+.btn--danger{
+  background: rgba(255, 70, 70, .92);
+  border: 1px solid rgba(255, 255, 255, .12);
+  color: white;
+  box-shadow: 0 14px 35px rgba(255, 70, 70, .18);
+}
+
+.btn--danger:hover{
+  background: rgba(255, 45, 45, .96);
+}
