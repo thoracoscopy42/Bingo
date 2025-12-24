@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 <div class="page">
   <div class="hero hero--wide">
     <div class="panel panel--wide">
@@ -9,7 +10,7 @@
         <span class="panel__pill">
           Zalogowany jako: {{ request.user.username }}
         </span>
-        <div id="toast" class="toast" role="status" aria-live="polite"></div>
+        
 
 
         <form method="post" action="{% url 'logout' %}" class="logout-form">
