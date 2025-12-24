@@ -17,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY')#'django-insecure-wb6615*u^e2l-uepu!ecr=1knygpu1ndk94f*j6fib2w74jzlo'
 DEBUG = False
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['comprehensive-meris-bingoorg-fb3c57a1.koyeb.app']
 
 # DISABLE_COLLECTSTATIC = 1
 # import os
