@@ -620,32 +620,34 @@ body::after{
 }
 
 
-/* === CONFETTI === */
-
+/* === CONFETTI: start z boku === */
 .confetti{
   position: fixed;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 19; /* POD toastem, NAD resztą */
+  z-index: 9998;
 }
 
 .confetti__piece{
   position: absolute;
-  top: -12px;
   width: 8px;
   height: 14px;
   border-radius: 3px;
   opacity: .95;
-  animation: confetti-fall linear forwards;
+
+  animation: confetti-side linear forwards;
 }
 
-@keyframes confetti-fall{
+@keyframes confetti-side{
   to{
-    transform: translate3d(var(--dx), 120vh, 0) rotate(var(--rot));
+    transform:
+      translate3d(var(--dx), var(--dy), 0)
+      rotate(var(--rot));
     opacity: 1;
   }
 }
+
 
 
 
