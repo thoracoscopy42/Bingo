@@ -18,6 +18,9 @@ from django.contrib import admin
 from django.urls import path, include
 from bingo.views import LandingLoginView
 from bingo.views import game # tu import nazwy z patha z appki (komentarz do pierwszego żebyśmy wiedzieli jak uzywać potem usunąć)
+from bingo.views import save_board
+
+
 
 urlpatterns = [
     # path("", home,name='home'),
@@ -26,5 +29,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("game/", game, name="game"), 
     path("accounts/", include("django.contrib.auth.urls")), # dodane game page które ma nazwę game (komentarz do pierwszego żebyśmy wiedzieli jak uzywać potem usunąć)
+    path("game/save/", save_board, name="save_board"),
 ]
 
