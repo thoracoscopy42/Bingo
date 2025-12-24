@@ -18,12 +18,12 @@ def game(request):
     return render(request, "game.html", {"rows": range(4), "cols": range(4)})
 
 
-# class FirstPasswordChangeView(PasswordChangeView):
-#     success_url = reverse_lazy("password_change_done")
+class FirstPasswordChangeView(PasswordChangeView):
+    success_url = reverse_lazy("password_change_done")
 
-#     def form_valid(self, form):
-#         resp = super().form_valid(form)
-#         prof = self.request.user.userprofile
-#         prof.must_change_password = False
-#         prof.save(update_fields=["must_change_password"])
-#         return resp
+    def form_valid(self, form):
+        resp = super().form_valid(form)
+        prof = self.request.user.userprofile
+        prof.must_change_password = False
+        prof.save(update_fields=["must_change_password"])
+        return resp
