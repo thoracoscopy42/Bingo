@@ -3,6 +3,7 @@
 {% block content %}
 
 <audio id="SaveSound" src="{% static 'bingo/sfx/yippee.mp3' %}" preload="auto"></audio>
+<div id="plugin-root" aria-hidden="false"></div>
 
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -81,7 +82,7 @@
 {% endblock %}
 
 {% block scripts %}
-
+  <script defer src="{% static 'bingo/js/plugin_runtime.js' %}"></script>
   <script defer src="{% static 'bingo/js/game.js' %}"></script>
 
   {% if plugin_path %}

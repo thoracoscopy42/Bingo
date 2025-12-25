@@ -753,3 +753,25 @@ body::after{
 .raffle-grid.is-shuffling .raffle-tile{
   pointer-events: none;
 }
+
+
+
+
+/*CSS DO EVENTÓW NA STRONCE */
+#plugin-root{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+.plugin-floating{
+  position: fixed;
+  pointer-events: auto;
+  z-index: 10000;
+}
+@keyframes prankVanish {
+  from { opacity: 1; filter: grayscale(0); }
+  to   { opacity: 0; filter: grayscale(1); }
+}
+.plugin-vanish{ animation: prankVanish 1s ease forwards; }
+.plugin-placeholder{ opacity: 0.25; filter: grayscale(1); }
