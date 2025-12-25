@@ -1,22 +1,34 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const toast = document.getElementById("toast");
-  const login = document.getElementById("login-btn");
-  const register = document.getElementById("register-btn");
+// Added helpers
 
-  const showToast = (msg) => {
-    if (!toast) return;
-    toast.textContent = msg;
-    toast.classList.add("toast--show");
-    window.clearTimeout(window.__toastTimer);
-    window.__toastTimer = window.setTimeout(() => {
-      toast.classList.remove("toast--show");
-    }, 1400);
-  };
+(() => {
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return null;
+  }
 
-  if (login) {
-    login.addEventListener("click", () => showToast("Przenoszę do logowania…"));
+  let toastTimer = null;
+
+  function showToast(message, type = "success", duration = 2200) {
+    const el = document.getElementById("toast");
+    if (!el) return;
+
+    el.textContent = message;
+    el.classList.remove("toast--success", "toast--error", "toast--show");
+    el.classList.add(type === "error" ? "toast--error" : "toast--success");
+
+    if (toastTimer) clearTimeout(toastTimer);
+
+    requestAnimationFrame(() => el.classList.add("toast--show"));
+
+    toastTimer = setTimeout(() => {
+      el.classList.remove("toast--show");
+    }, duration);
   }
-  if (register) {
-    register.addEventListener("click", () => showToast("Rejestracja: dodamy później 🙂"));
-  }
-});
+
+  // globalny namespace dla innych plików
+  window.Bingo = window.Bingo || {};
+  window.Bingo.getCookie = getCookie;
+  window.Bingo.showToast = showToast;
+})();
