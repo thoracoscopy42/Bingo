@@ -22,7 +22,7 @@ window.BingoUserPlugin.init = function (api) {
   const floating = new Map();
   const cloaked = new Set(); // tile aktualnie "na niewidce" (żeby nie brać go drugi raz)
 
-  let nextAllowedAt = Date.now() + 30000; //delay po starcie strony 40 sek
+  let nextAllowedAt = Date.now() + 15000; //delay po starcie strony 40 sek
 
   function now() { return Date.now(); }
 
