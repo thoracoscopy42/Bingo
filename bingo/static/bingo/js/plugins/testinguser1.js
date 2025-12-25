@@ -18,6 +18,57 @@ window.BingoUserPlugin.init = function (api) {
     bottomPad: 10,
   };
 
+  // ===== SPACEGLIDING TOGGLE =====
+  const MUSIC_URL = "/static/bingo/sfx/yippee.mp3"; // <- podmień ścieżkę
+  let spaceOn = false;
+
+  const music = new Audio(MUSIC_URL);
+  music.loop = true;
+  music.preload = "auto";
+  music.volume = 0.25; // możesz sterować
+
+  function updateBtn() {
+    btn.dataset.on = spaceOn ? "1" : "0";
+    btn.textContent = spaceOn ? "Spacegliding: ON" : "Spacegliding: OFF";
+  }
+
+  async function setSpace(on) {
+    spaceOn = !!on;
+    updateBtn();
+
+    if (spaceOn) {
+      // play() może zwrócić promise i czasem się wywali — łapiemy
+      try { await music.play(); } catch (e) { console.log("[space] play blocked:", e?.name); }
+    } else {
+      music.pause();
+      music.currentTime = 0;
+    }
+  }
+
+  // UI
+  const root = document.getElementById("plugin-root");
+  const wrap = document.createElement("div");
+  wrap.className = "plugin-toggle";
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.addEventListener("click", () => setSpace(!spaceOn));
+
+  wrap.appendChild(btn);
+  root.appendChild(wrap);
+
+  // default OFF
+  updateBtn();
+
+  // opcjonalnie: komenda w konsoli
+  window.testinguser1 = window.testinguser1 || {};
+  window.testinguser1.space = (on) => setSpace(on);
+  // ===== END SPACEGLIDING =====
+
+
+
+
+
   // tile -> tele (czyli już jest floating / poza tabelą)
   const floating = new Map();
   const cloaked = new Set(); // tile aktualnie "na niewidce" (żeby nie brać go drugi raz)

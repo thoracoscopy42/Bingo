@@ -769,6 +769,29 @@ body::after{
   pointer-events: auto;
   z-index: 10000;
 }
+/* toggle do buttona na stronie */
+.plugin-toggle{
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 11000;
+  pointer-events: auto;
+}
+
+.plugin-toggle button{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(10,10,10,.72);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.plugin-toggle button[data-on="1"]{
+  outline: 2px solid rgba(42,255,140,.65);
+}
+
 
 @keyframes prankVanish {
   from { opacity: 1; filter: grayscale(0); }
