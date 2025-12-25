@@ -211,7 +211,24 @@
     if (resp.ok) {
       showToast?.("UDAŁO SIĘ YIPIEE!!!", "success", 2200);
       burstConfetti(90);
-      console.log("Trying to play sound")
+      // TO BE DELETED// TO BE DELETED// TO BE DELETED// TO BE DELETED
+      const audio = document.getElementById("rerollSound");
+        if (!audio) {
+          console.log("No audio element");
+          return;
+        }
+
+        audio.currentTime = 0;
+
+        const p = audio.play();
+        if (p && typeof p.then === "function") {
+          p.then(() => {
+            console.log("play() OK");
+          }).catch(err => {
+            console.error("play() BLOCKED/FAILED:", err?.name, err?.message, err);
+          });
+        }
+        // TO BE DELETED// TO BE DELETED// TO BE DELETED// TO BE DELETED
     } else {
       const txt = await resp.text();
       showToast?.("Are you serious right meow :(" + (txt || ""), "error", 2600);
