@@ -8,8 +8,8 @@ window.BingoUserPlugin.init = function (api) {
     vanishAnimMs: 1000,      // 1s fade→gray w tabeli / na stronie
     cloakMs: 7000,           // ile ma być "na niewidce" po zniknięciu
     minGapMs: 45000,         // >= 45s przerwy między prankami
-    sfxHideVol: 0.55,
-    sfxRevealVol: 0.65,
+    sfxHideVol: 0.35,
+    sfxRevealVol: 0.35,
 
     // side spawn:
     sideMargin: 12,
