@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+
 {% block content %}
 
 <audio id="rerollSound" src="{% static 'bingo/sfx/reroll.mp3' %}" preload="auto"></audio>
@@ -45,6 +46,7 @@
           <button class="btn btn--secondary" type="button" id="btnShuffle">SHUFFLE</button>
           <div class="btn-badge" id="badgeShuffle">3</div>
         </div>
+
         <div class="btn-wrap">
           <button class="btn btn--secondary" type="button" id="btnPick">WYBIERAM CIEBIE</button>
           <div class="btn-badge btn-badge--disabled" id="badgePick">;3 UWU</div>
@@ -55,15 +57,22 @@
   </div>
 </div>
 
-{{ raffle_config|json_script:"raffle-config" }}
-
 {% endblock %}
 
 {% block scripts %}
+  <script id="raffle-config" type="application/json">
+  {
+    "endpoints": {
+      "shuffle": "{% url 'raffle_shuffle_use' %}",
+      "reroll": "{% url 'raffle_reroll_all' %}"
+    },
+    "limits": { "shuffle": 3, "reroll": 3 },
+    "gridSize": 4,
+    "audio": { "rerollId": "rerollSound" }
+  }
+  </script>
+
+  {# jeśli raffle.js korzysta z window.Bingo.getCookie/showToast, runtime musi być pierwszy #}
   <script defer src="{% static 'bingo/js/plugin_runtime.js' %}"></script>
   <script defer src="{% static 'bingo/js/plugins/raffle.js' %}"></script>
 {% endblock %}
-
-
-
-

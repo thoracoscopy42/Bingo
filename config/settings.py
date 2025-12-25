@@ -126,27 +126,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 #nasze pliki statyczne
-#STATIC_URL = 'static/'
-#STATICFILES_DIRS = [BASE_DIR / 'static']
-##pliki statyczne już w deploymencie
-#STATICROOT = os.path.join(BASE_DIR, 'staticfiles')
-## file caching żeby przeglądarka się refreshowała i zbierała pliki typu cs js i obrazki przy każdym updacie
-#STORAGES = {
-#    "staticfiles": {
-#        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-#    },
-#}
-#-----------------------------------------------
-# Static files (CSS, JavaScript, Images)
-STATIC_URL = "/static/"
-
-# gdzie collectstatic ma wrzucać pliki na deployu
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
-# NIE ustawiaj STATICFILES_DIRS jeśli nie masz folderu BASE_DIR/static
-# (Twoje app-static: bingo/static/... i tak będą wykryte automatycznie)
-# STATICFILES_DIRS = [BASE_DIR / "static"]
-
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+#pliki statyczne już w deploymencie
+STATICROOT = os.path.join(BASE_DIR, 'staticfiles')
+# file caching żeby przeglądarka się refreshowała i zbierała pliki typu cs js i obrazki przy każdym updacie
 STORAGES = {
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",

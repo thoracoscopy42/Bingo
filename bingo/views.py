@@ -99,17 +99,8 @@ def raffle(request):
         request.session[k] = v
     request.session.modified = True
 
-    raffle_config = {
-        "endpoints": {
-            "shuffle": reverse("raffle_shuffle_use"),
-            "reroll": reverse("raffle_reroll_all"),
-        },
-        "limits": {"shuffle": 3, "reroll": 3},
-        "gridSize": 4,
-        "audio": {"rerollId": "rerollSound"},
-    }
+    return render(request, "raffle.html", {"grids": grids_2d})
 
-    return render(request, "raffle.html", {"grids": grids_2d, "raffle_config": raffle_config})
 
 
 @login_required
