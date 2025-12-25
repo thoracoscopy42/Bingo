@@ -57,14 +57,14 @@ window.BingoUserPlugin.init = function (api) {
   // ===== STYLE: ŚRODEK EKRANU =====
   wrap.style.position = "fixed";
   wrap.style.left = "50%";
-  wrap.style.top = "90%";
+  wrap.style.top = "10%";
   wrap.style.transform = "translate(-50%, -50%)";
   wrap.style.zIndex = "99999";
   wrap.style.pointerEvents = "none";
 
   btn.style.pointerEvents = "auto";
-  btn.style.padding = "18px 28px";
-  btn.style.fontSize = "20px";
+  btn.style.padding = "12px 18px";
+  btn.style.fontSize = "12px";
   btn.style.fontWeight = "800";
   btn.style.borderRadius = "999px";
   btn.style.border = "2px solid rgba(42,255,140,0.9)";
