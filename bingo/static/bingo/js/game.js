@@ -239,8 +239,8 @@
 
     if (resp.ok) {
       showToast?.("MAMY TO YIPIEE!!!", "success", 2200);
-      burstConfetti(120);
       playAudio("SaveSound", {volume: 0.2});
+      burstConfetti(120);
     } else {
       const txt = await resp.text();
       showToast?.("Are you serious right meow :(" + (txt || ""), "error", 2600);
