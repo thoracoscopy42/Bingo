@@ -21,6 +21,7 @@ from bingo.views import game
 from bingo.views import save_board
 from bingo.views import raffle
 from bingo.views import raffle_reroll_all
+from bingo.views import raffle_shuffle_use
 
 
 urlpatterns = [
@@ -32,5 +33,6 @@ urlpatterns = [
     path("game/save/", save_board, name="save_board"),
     path("raffle/", raffle, name="raffle"),
     path("raffle/reroll/", raffle_reroll_all, name="raffle_reroll_all"),
+    path("raffle/shuffle/", raffle_shuffle_use, name="raffle_shuffle_use"),
 ]
 

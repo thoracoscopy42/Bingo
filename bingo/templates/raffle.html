@@ -2,6 +2,7 @@
 {% load static %}
 {% block content %}
 
+
 <audio id="rerollSound" src="{% static 'bingo/sfx/reroll.mp3' %}" preload="auto"></audio>
 
 <div class="page">
@@ -14,10 +15,11 @@
 
       <div class="raffle-shell">
         <button class="raffle-nav raffle-nav--left" type="button" aria-label="Poprzedni grid">‹</button>
+        <button class="raffle-nav raffle-nav--right" type="button" aria-label="Następny grid">›</button>
 
         <div class="raffle-stage is-in">
           {% for grid in grids %}
-            <div class="raffle-board raffle-board--set" data-grid="{{ forloop.counter0 }}" {% if forloop.counter0 != 0 %}hidden{% endif %}>
+            <div class="raffle-board raffle-board--set" data-grid="{{ forloop.counter0 }}">
               <div class="raffle-grid">
                 {% for row in grid %}
                   {% for cell in row %}
@@ -32,20 +34,23 @@
             </div>
           {% endfor %}
         </div>
-
-        <button class="raffle-nav raffle-nav--right" type="button" aria-label="Następny grid">›</button>
       </div>
 
       <div class="raffle-actions">
-        <button class="btn btn--primary" type="button" id="btnReroll">REROLL</button>
-        <button class="btn btn--secondary" type="button" id="btnShuffle">SHUFFLE</button>
-        <span class="raffle-counter" id="rerollCounter">Rerolle: 0/3</span>
+        <div class="btn-wrap">
+          <button class="btn btn--primary" type="button" id="btnReroll">REROLL</button>
+          <div class="btn-badge" id="badgeReroll">3</div>
+        </div>
+
+        <div class="btn-wrap">
+          <button class="btn btn--secondary" type="button" id="btnShuffle">SHUFFLE</button>
+          <div class="btn-badge" id="badgeShuffle">3</div>
+        </div>
       </div>
 
     </div>
   </div>
 </div>
-
 <script>
 (function(){
   function getCookie(name) {
@@ -58,44 +63,91 @@
   const boards = Array.from(document.querySelectorAll(".raffle-board--set"));
   const left = document.querySelector(".raffle-nav--left");
   const right = document.querySelector(".raffle-nav--right");
+
   const btnReroll = document.getElementById("btnReroll");
   const btnShuffle = document.getElementById("btnShuffle");
-  const counter = document.getElementById("rerollCounter");
+
+  const badgeReroll = document.getElementById("badgeReroll");
+  const badgeShuffle = document.getElementById("badgeShuffle");
+
   const audio = document.getElementById("rerollSound");
 
   let active = 0;
-  let usedRerolls = 0;
+  let rerollsUsed = 0;   // max 3
+  let shufflesUsed = 0;  // max 3
+
+  function applyClasses() {
+    boards.forEach((b, i) => {
+      b.classList.remove("raffle-board--active","raffle-board--prev","raffle-board--next","raffle-board--hidden");
+      if (i === active) b.classList.add("raffle-board--active");
+      else if (i === (active + boards.length - 1) % boards.length) b.classList.add("raffle-board--prev");
+      else if (i === (active + 1) % boards.length) b.classList.add("raffle-board--next");
+      else b.classList.add("raffle-board--hidden");
+    });
+  }
+
+  function updateBadges() {
+    const rerollLeft = Math.max(0, 3 - rerollsUsed);
+    const shuffleLeft = Math.max(0, 3 - shufflesUsed);
+
+    badgeReroll.textContent = String(rerollLeft);
+    badgeShuffle.textContent = String(shuffleLeft);
+
+    badgeReroll.classList.toggle("btn-badge--disabled", rerollLeft === 0);
+    badgeShuffle.classList.toggle("btn-badge--disabled", shuffleLeft === 0);
+
+    btnReroll.disabled = rerollLeft === 0;
+    btnShuffle.disabled = shuffleLeft === 0;
+  }
 
   function show(n){
     active = (n + boards.length) % boards.length;
-    boards.forEach((b, i) => b.hidden = (i !== active));
+    applyClasses();
   }
 
   left.addEventListener("click", () => show(active - 1));
   right.addEventListener("click", () => show(active + 1));
-  show(0);
 
-  // SHUFFLE: miesza teksty w aktywnym gridzie (frontend-only)
-  btnShuffle.addEventListener("click", () => {
-    const board = boards[active];
-    const tiles = Array.from(board.querySelectorAll(".raffle-text"));
-    const texts = tiles.map(t => t.textContent);
+  // INIT
+  applyClasses();
+  updateBadges();
 
-    for (let i = texts.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [texts[i], texts[j]] = [texts[j], texts[i]];
+  // SHUFFLE (z limitem 3, liczonym na backendzie)
+  btnShuffle.addEventListener("click", async () => {
+    try {
+      const res = await fetch("{% url 'raffle_shuffle_use' %}", {
+        method: "POST",
+        headers: {"X-CSRFToken": csrftoken},
+      });
+      const data = await res.json();
+      if (!data.ok) return;
+
+      shufflesUsed = data.shuffles_used;
+
+      const board = boards[active];
+      const tiles = Array.from(board.querySelectorAll(".raffle-text"));
+      const texts = tiles.map(t => t.textContent);
+
+      for (let i = texts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [texts[i], texts[j]] = [texts[j], texts[i]];
+      }
+      tiles.forEach((t, i) => t.textContent = texts[i]);
+
+      updateBadges();
+    } catch (e) {
+      console.error(e);
     }
-    tiles.forEach((t, i) => t.textContent = texts[i]);
   });
 
-  // REROLL: podmienia CAŁY aktywny grid (POST)
+  // REROLL całego grida (limit 3 globalnie)
   btnReroll.addEventListener("click", async () => {
-    if (audio) audio.play().catch(() => {});
-
-    btnReroll.disabled = true;
+    if (audio) audio.play().catch(()=>{});
 
     const form = new FormData();
     form.append("grid", String(active));
+
+    btnReroll.disabled = true;
 
     try {
       const res = await fetch("{% url 'raffle_reroll_all' %}", {
@@ -103,18 +155,8 @@
         headers: {"X-CSRFToken": csrftoken},
         body: form
       });
-
-      const ct = res.headers.get("content-type") || "";
-      if (!ct.includes("application/json")) {
-        console.warn("Non-JSON response:", res.status);
-        return;
-      }
-
       const data = await res.json();
-      if (!data.ok) {
-        console.warn(data.error || "Reroll failed");
-        return;
-      }
+      if (!data.ok) return;
 
       const board = boards[active];
       const tiles = Array.from(board.querySelectorAll(".raffle-text"));
@@ -122,18 +164,14 @@
         if (tiles[i]) tiles[i].textContent = txt;
       });
 
-      usedRerolls = data.rerolls_used || usedRerolls;
-      counter.textContent = `Rerolle: ${usedRerolls}/3`;
-
-      if (usedRerolls >= 3) btnReroll.disabled = true;
-
+      rerollsUsed = data.rerolls_used || rerollsUsed;
+      updateBadges();
     } catch (e) {
       console.error(e);
     } finally {
-      if (usedRerolls < 3) btnReroll.disabled = false;
+      updateBadges();
     }
   });
+
 })();
 </script>
-
-{% endblock %}
