@@ -33,7 +33,7 @@ body{
 
 /* Spaceglide: tło całej strony GIF */
 body.spaceglide{
-  background-image: url("/static/bingo/images/spaceglide.gif");
+  background-image: url("/static/bingo/images/spacegliding.gif");
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
@@ -47,18 +47,18 @@ body.spaceglide .panel{
 }
 
 /* opcjonalnie: table też ciemniej */
-/* body.spaceglide .grid-table{
+body.spaceglide .grid-table{
   background: rgba(0,0,0,0.55) !important;
-} */
+}
 
 /* opcjonalnie: komórki / wrappery czytelniejsze */
-/* body.spaceglide .cell-wrapper{
+body.spaceglide .cell-wrapper{
   background: rgba(0,0,0,0.35) !important;
 }
 body.spaceglide .page,
 body.spaceglide .hero{
   background: transparent !important;
-} */
+}
 
 
 /* opcjonalnie: tekst jaśniejszy */
