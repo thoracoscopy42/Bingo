@@ -1,5 +1,5 @@
-// static/bingo/js/plugins/raffle.js
 (() => {
+    
   // ===== Helpers (w stylu game.jss) =====
   function getJSONScript(id, fallback = null) {
     const el = document.getElementById(id);
@@ -269,5 +269,10 @@
     }
   }
 
-  document.addEventListener("DOMContentLoaded", initRafflePlugin);
+    if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initRafflePlugin);
+  } else {
+    initRafflePlugin();
+  }
 })();
+
