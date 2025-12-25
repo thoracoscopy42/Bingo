@@ -1,6 +1,3 @@
-console.log("[testinguser1] plugin file LOADED");
-
-
 window.BingoUserPlugin = window.BingoUserPlugin || {};
 
 window.BingoUserPlugin.init = function (api) {

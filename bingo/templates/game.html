@@ -83,7 +83,9 @@
   <script defer src="{% static 'bingo/js/game.js' %}"></script>
 
   {% if plugin_path %}
+
     <script defer src="{% static plugin_path %}"></script>
+    {{ plugin_sfx|json_script:"plugin-sfx" }}
   {% endif %}
 
 {% endblock %}
