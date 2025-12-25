@@ -31,6 +31,6 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")), 
     path("game/save/", save_board, name="save_board"),
     path("raffle/", raffle, name="raffle"),
-    path("raffle/reroll_reroll_all/", raffle_reroll_all, name="raffle_reroll_all"),
+    path("raffle/reroll/", raffle_reroll_all, name="raffle_reroll_all"),
 ]
 
