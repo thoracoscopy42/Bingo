@@ -131,6 +131,11 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 #pliki statyczne już w deploymencie
 STATICROOT = os.path.join(BASE_DIR, 'staticfiles')
 # file caching żeby przeglądarka się refreshowała i zbierała pliki typu cs js i obrazki przy każdym updacie
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 #redirecty po loginie logoucie itd.
 
