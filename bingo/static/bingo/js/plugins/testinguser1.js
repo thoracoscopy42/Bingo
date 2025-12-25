@@ -1,17 +1,16 @@
-window.BingoUserPlugin.init = function(api) {
+window.BingoUserPlugin = window.BingoUserPlugin || {};
 
-  // ===== DIAGNOSTYKA ŁADOWANIA PLUGINU I SFX =====
+window.BingoUserPlugin.init = function (api) {
   console.groupCollapsed(
     "%c[Bingo Plugin] testinguser1 – init OK",
     "color:#2AFF8C;font-weight:bold"
   );
 
-  if (!api.sfx || Object.keys(api.sfx).length === 0) {
+  if (!api || !api.sfx || Object.keys(api.sfx).length === 0) {
     console.warn("❌ No SFX provided for this user");
   } else {
     console.log("✅ SFX loaded");
 
-    // ładna tabelka: typ -> index -> url
     const table = [];
     for (const [type, list] of Object.entries(api.sfx)) {
       if (!Array.isArray(list)) continue;
@@ -19,17 +18,19 @@ window.BingoUserPlugin.init = function(api) {
         table.push({
           type,
           index: i,
-          file: url.split("/").pop(),
+          file: String(url).split("/").pop(),
           url
         });
       });
     }
-
     console.table(table);
   }
 
   console.groupEnd();
-  // ===== KONIEC DIAGNOSTYKI =====
+
+  // cleanup (na teraz nic nie sprzątamy, ale kontrakt zachowujemy)
+  return () => {};
+};
 
 
 
