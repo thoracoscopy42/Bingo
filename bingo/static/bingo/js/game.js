@@ -206,6 +206,45 @@
     });
   }
 
+//end of sfx //end of sfx //end of sfx //end of sfx //end of sfx 
+  function createPluginCtx() {
+  const timers = new Set();
+  const listeners = [];
+
+  function on(target, type, handler, opts) {
+    target.addEventListener(type, handler, opts);
+    listeners.push([target, type, handler, opts]);
+  }
+
+  function setTimeoutSafe(fn, ms) {
+    const id = setTimeout(fn, ms);
+    timers.add(id);
+    return id;
+  }
+
+  function destroy() {
+    timers.forEach(id => { clearTimeout(id); clearInterval(id); });
+    timers.clear();
+    listeners.forEach(([t, ty, h, o]) => t.removeEventListener(ty, h, o));
+    listeners.length = 0;
+  }
+
+  return { on, setTimeoutSafe, destroy };
+}
+
+function playSfx(url, { volume = 0.35 } = {}) {
+  if (!url) return false;
+  const a = new Audio(url);
+  a.volume = Math.max(0, Math.min(1, volume));
+  a.play().catch(() => {});
+  return true;
+}
+
+//end of sfx //end of sfx //end of sfx //end of sfx //end of sfx
+
+
+
+
   async function onSave() {
     const wrappers = document.querySelectorAll(".cell-wrapper");
     const grid = [];
@@ -248,10 +287,39 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    enhanceDropdowns();
-    loadSavedGrid();
+  enhanceDropdowns();
+  loadSavedGrid();
 
-    const saveBtn = document.getElementById("save-btn");
-    if (saveBtn) saveBtn.addEventListener("click", onSave);
-  });
+  const saveBtn = document.getElementById("save-btn");
+  if (saveBtn) saveBtn.addEventListener("click", onSave);
+
+  // ===== INIT USER PLUGIN =====
+  const pluginInit = window.BingoUserPlugin?.init;
+  if (typeof pluginInit === "function") {
+    const ctx = createPluginCtx();
+    const sfx = getJSONScript("plugin-sfx", {}) || {};
+
+    console.log("[core] calling BingoUserPlugin.init(...)");
+    try {
+      const cleanup = pluginInit({
+        ctx,
+        sfx,
+        playSfx,
+        // na razie tylko to; teleporty dołożymy za chwilę
+      });
+
+      // sprzątanie na unload
+      window.addEventListener("beforeunload", () => {
+        try { if (typeof cleanup === "function") cleanup(); } catch {}
+        ctx.destroy();
+      });
+    } catch (e) {
+      console.error("[core] plugin init error:", e);
+    }
+  } else {
+    console.log("[core] no user plugin for this page");
+  }
+  // ===== END INIT USER PLUGIN =====
+});
+
 })();
