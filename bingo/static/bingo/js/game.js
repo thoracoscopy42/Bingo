@@ -3,45 +3,31 @@
 
 
   // ===== SAVE SOUND (global, for everyone) =====
-    const SAVE_SOUND_VOLUME = 0.25;   // 0.0 - 1.0
-const SAVE_SOUND_COOLDOWN = 2500; // ms
+    const BASE = window.STATIC_BASE || "/static/bingo/";
+    const SAVE_SOUND_URL = BASE + "sfx/yipiee-tbh.mp3"; // uwaga na NAZWĘ
 
-const saveAudio = new Audio(SAVE_SOUND_URL);
-saveAudio.preload = "auto";
-saveAudio.volume = SAVE_SOUND_VOLUME;
+    const SAVE_SOUND_VOLUME = 0.35;     // 0.0 - 1.0
+    const SAVE_SOUND_COOLDOWN = 500;   
 
-let lastSaveSoundAt = 0;
-let audioUnlocked = false;
+    const saveAudio = new Audio(SAVE_SOUND_URL);
+    saveAudio.preload = "auto";
+    saveAudio.volume = SAVE_SOUND_VOLUME;
 
-// wywołaj w handlerze kliknięcia (ZANIM await)
-function unlockAudioOnce() {
-  if (audioUnlocked) return;
-  audioUnlocked = true;
+    let lastSaveSoundAt = 0;
 
-  // próbujemy "odblokować" audio w ramach user gesture
-  saveAudio.muted = true;
-  saveAudio.play()
-    .then(() => {
+    function playSaveSound() {
+      const now = Date.now();
+      if (now - lastSaveSoundAt < SAVE_SOUND_COOLDOWN) return;
+      lastSaveSoundAt = now;
+
+      // restart
       saveAudio.pause();
       saveAudio.currentTime = 0;
-      saveAudio.muted = false;
-    })
-    .catch(() => {
-      // jak się nie uda, trudno — i tak spróbujemy później
-      saveAudio.muted = false;
-    });
-}
 
-function playSaveSound() {
-  const now = Date.now();
-  if (now - lastSaveSoundAt < SAVE_SOUND_COOLDOWN) return;
-  lastSaveSoundAt = now;
-
-  saveAudio.pause();
-  saveAudio.currentTime = 0;
-  saveAudio.play().catch(() => {});
-}
-
+      saveAudio.play().catch(() => {
+        // jeżeli przeglądarka odmówi (rzadko przy kliknięciu), ignorujemy
+      });
+    }
     // END OF SOUND
 
   // bierzemy helpery z app.js
