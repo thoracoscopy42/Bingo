@@ -57,7 +57,8 @@
           {% endfor %}
         </table>
 
-        <div class="actions" style="margin-top: 14px;">
+        <div class="actions actions--spaced">
+        {% comment %} style="margin-top: 14px;" {% endcomment %}
           <button class="btn btn--primary" type="button" id="save-btn">Zapisz</button>
           <a class="btn btn--secondary" href="{% url 'raffle' %}">Losowanie</a>
         </div>

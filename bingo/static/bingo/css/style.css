@@ -146,6 +146,11 @@ body{
   margin: 12px 0 10px;
 }
 
+.actions--spaced {
+  margin-top: 14px;
+}
+
+
 .btn{
   display: inline-flex;
   align-items: center;
