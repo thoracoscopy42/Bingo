@@ -209,7 +209,9 @@
 //end of sfx //end of sfx //end of sfx //end of sfx //end of sfx 
   
   async function onSave() {
-    const wrappers = document.querySelectorAll(".cell-wrapper");
+    // const wrappers = document.querySelectorAll(".cell-wrapper");
+    // zmieniamy żeby działało dla znikających tilesów
+    const wrappers = document.querySelectorAll(".cell-wrapper:not(.plugin-placeholder)");
     const grid = [];
 
     wrappers.forEach(w => {

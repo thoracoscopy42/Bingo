@@ -769,9 +769,16 @@ body::after{
   pointer-events: auto;
   z-index: 10000;
 }
+
 @keyframes prankVanish {
   from { opacity: 1; filter: grayscale(0); }
   to   { opacity: 0; filter: grayscale(1); }
 }
 .plugin-vanish{ animation: prankVanish 1s ease forwards; }
+
 .plugin-placeholder{ opacity: 0.25; filter: grayscale(1); }
+
+/* opcjonalnie: lekka ramka na floating żeby było widać */
+/* .plugin-floating .cell-wrapper{
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+} */
