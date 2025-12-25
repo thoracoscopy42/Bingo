@@ -1,31 +1,31 @@
 :root{
   color-scheme: dark;
-
   --bg: #070A12;
   --bg2: #0B1020;
   --card: rgba(255,255,255,.06);
   --card2: rgba(255,255,255,.08);
   --border: rgba(255,255,255,.10);
-
   --text: #EAF0FF;
   --muted: rgba(234,240,255,.72);
-
   --primary: #4C7DFF;
   --primary2: #2E5BFF;
-
   --shadow: 0 18px 55px rgba(0,0,0,.55);
   --radius: 22px;
 }
 
-*{ box-sizing: border-box; }
-html, body{ height: 100%; }
+*{
+  box-sizing: border-box;
+}
+
+html, body{
+  height: 100%;
+}
 
 body{
-  margin:0;
+  margin: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   color: var(--text);
-  background:
-    radial-gradient(1000px 500px at 18% 10%, rgba(76,125,255,.25), transparent 60%),
+  background: radial-gradient(1000px 500px at 18% 10%, rgba(76,125,255,.25), transparent 60%),
     radial-gradient(700px 420px at 80% 18%, rgba(255,255,255,.10), transparent 62%),
     radial-gradient(900px 520px at 55% 90%, rgba(46,91,255,.12), transparent 60%),
     linear-gradient(180deg, var(--bg), var(--bg2));
@@ -33,9 +33,9 @@ body{
 
 .page{
   min-height: 100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 28px 16px;
 }
 
@@ -46,33 +46,40 @@ body{
 }
 
 .glow{
-  position:absolute;
+  position: absolute;
   filter: blur(40px);
   opacity: .65;
-  pointer-events:none;
+  pointer-events: none;
 }
+
 .glow--a{
-  width: 280px; height: 280px;
-  left: -70px; top: -60px;
+  width: 280px;
+  height: 280px;
+  left: -70px;
+  top: -60px;
   background: radial-gradient(circle, rgba(76,125,255,.9), transparent 65%);
 }
+
 .glow--b{
-  width: 240px; height: 240px;
-  right: -60px; top: 40px;
+  width: 240px;
+  height: 240px;
+  right: -60px;
+  top: 40px;
   background: radial-gradient(circle, rgba(255,255,255,.35), transparent 65%);
 }
 
 .hero__header{
-  text-align:center;
+  text-align: center;
   padding: 26px 10px 16px;
 }
 
 .logo{
-  width: 56px; height: 56px;
+  width: 56px;
+  height: 56px;
   margin: 0 auto 14px;
   border-radius: 16px;
-  display:grid;
-  place-items:center;
+  display: grid;
+  place-items: center;
   font-weight: 800;
   font-size: 22px;
   background: linear-gradient(135deg, rgba(76,125,255,.95), rgba(46,91,255,.75));
@@ -107,15 +114,15 @@ body{
 }
 
 .panel__top{
-  display:flex;
-  align-items:center;
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
 }
 
 .panel__title{
-  margin:0;
+  margin: 0;
   font-size: 14px;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -132,18 +139,18 @@ body{
 }
 
 .actions{
-  display:flex;
-  justify-content:center;
+  display: flex;
+  justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
   margin: 12px 0 10px;
 }
 
 .btn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  text-decoration:none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
   padding: 12px 18px;
   min-width: 180px;
   border-radius: 14px;
@@ -151,7 +158,7 @@ body{
   letter-spacing: .01em;
   transition: transform 140ms ease, filter 140ms ease, background 140ms ease, border-color 140ms ease;
   border: 1px solid transparent;
-  user-select:none;
+  user-select: none;
 }
 
 .btn--primary{
@@ -179,7 +186,7 @@ body{
 
 .fineprint{
   margin: 10px 0 0;
-  text-align:center;
+  text-align: center;
   color: rgba(234,240,255,.62);
   font-size: 13px;
   line-height: 1.5;
@@ -190,25 +197,20 @@ body{
   top: 14px;
   left: 50%;
   transform: translateX(-50%) translateY(-8px) scale(.96);
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-
   width: fit-content;
   max-width: 92vw;
-
   padding: 10px 18px;
   border-radius: 999px;
   font-size: 14px;
   font-weight: 700;
   white-space: nowrap;
-
   opacity: 0;
   pointer-events: none;
   transition: opacity 160ms ease, transform 160ms ease;
-
   z-index: 9999;
 }
 
@@ -218,13 +220,11 @@ body{
   pointer-events: auto;
 }
 
-
 .toast--success{
   background: linear-gradient(135deg, #2aff8c, #00cdb4);
   color: #ffffff;
   border: 1px solid rgba(255,255,255,.25);
-  box-shadow:
-    0 14px 35px rgba(0,0,0,.45),
+  box-shadow: 0 14px 35px rgba(0,0,0,.45),
     0 0 22px rgba(0, 205, 180, .35);
 }
 
@@ -232,7 +232,6 @@ body{
   background: linear-gradient(135deg, #ff5a5a, #e03b5c);
   color: #ffffff;
 }
-
 
 body::before,
 body::after{
@@ -243,18 +242,16 @@ body::after{
   height: 100vh;
   pointer-events: none;
   z-index: 0;
-
   background-image: url("../images/2sigmy.jpg");
   background-repeat: no-repeat;
   background-size: auto 100%;
   background-position: center top;
-
   opacity: 0.35;
   filter: blur(0.2px);
 }
-/* LEWA STRONA */
+
 body::before{
-  left: -0px;          /* częściowo poza ekranem */
+  left: -0px;
   mask-image: linear-gradient(
     to right,
     transparent 0%,
@@ -264,10 +261,9 @@ body::before{
   );
 }
 
-/* PRAWA STRONA */
 body::after{
   right: -0px;
-  transform: scaleX(-1); /* lustrzane odbicie */
+  transform: scaleX(-1);
   mask-image: linear-gradient(
     to left,
     transparent 0%,
@@ -276,7 +272,7 @@ body::after{
     transparent 100%
   );
 }
-/* Większy kontener na stronę grid */
+
 .hero--wide{
   width: min(1200px, 96vw);
 }
@@ -290,13 +286,6 @@ body::after{
   max-width: 100%;
 }
 
-/* Tabela i pola */
-.grid-table{
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 12px;
-}
-
 .grid-cell{
   width: 100%;
   min-height: 90px;
@@ -305,7 +294,7 @@ body::after{
   border: 1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.06);
   color: rgba(234,240,255,.92);
-  resize: none;                 /* ✅ blokuje zmianę rozmiaru */
+  resize: none;
   outline: none;
 }
 
@@ -314,90 +303,30 @@ body::after{
   box-shadow: 0 0 0 3px rgba(76,125,255,.18);
 }
 
-/* Dropdown zgodny ze stylem */
-.user-select{
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.06);
-  color: rgba(234,240,255,.92);
-  outline: none;
-}
-
 .user-select:focus{
   border-color: rgba(76,125,255,.55);
   box-shadow: 0 0 0 3px rgba(76,125,255,.18);
 }
-.cell-user{
-  margin-top: 8px;
-}
-/* wrapper jednego pola */
-.cell-wrapper{
-  display: flex;
-  flex-direction: column;
-  border-radius: 14px;
-  overflow: hidden; /* łączy textarea + select wizualnie */
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.06);
-}
 
-/* textarea – górna część */
-.grid-cell--with-select{
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  resize: none;
-  min-height: 90px;
-}
-
-/* select – dolna część pola */
-.cell-user--inside{
-  border: none;
-  border-top: 1px solid rgba(255,255,255,.10);
-  border-radius: 0;
-  background: rgba(0,0,0,.18);
-  padding: 10px 12px;
-  font-size: 13px;
-  color: rgba(234,240,255,.85);
-}
-
-/* focus całego komponentu */
-.cell-wrapper:focus-within{
-  border-color: rgba(76,125,255,.55);
-  box-shadow: 0 0 0 3px rgba(76,125,255,.18);
-}
-/* ===== GRID: ładniejsze komórki + dropdown "w środku" ===== */
-
-/* mniejsze odstępy, bardziej równo */
 .grid-table{
+  width: 100%;
+  border-collapse: separate;
   border-spacing: 14px;
 }
 
-/* w komórce tabeli niech nie dodaje dziwnych marginesów */
 .grid-table td{
   padding: 0;
   vertical-align: top;
 }
 
-/* komponent: textarea + select w jednej obudowie */
-.cell-wrapper{
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,.12);
-  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
-  box-shadow: 0 10px 28px rgba(0,0,0,.35);
-}
-
-/* textarea w środku – miękciej i czytelniej */
 .grid-cell--with-select{
   border: 0;
   border-radius: 0;
   background: transparent;
-  padding: 14px 14px 12px;
-  min-height: 96px;
-  color: rgba(234,240,255,.92);
   resize: none;
+  min-height: 96px;
+  padding: 14px 14px 12px;
+  color: rgba(234,240,255,.92);
   outline: none;
 }
 
@@ -405,28 +334,29 @@ body::after{
   color: rgba(234,240,255,.38);
 }
 
-/* pasek dolny dla selecta (część tego samego pola) */
 .cell-user--inside{
-  width: 100%;
   border: 0;
   border-top: 1px solid rgba(255,255,255,.10);
   border-radius: 0;
+  background: radial-gradient(500px 120px at 10% 20%, rgba(76,125,255,.14), transparent 60%),
+    rgba(0,0,0,.18);
   padding: 10px 40px 10px 14px;
   font-size: 13px;
   color: rgba(234,240,255,.86);
-
-  /* odsystemowienie selecta */
+  width: 100%;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-
-  background:
-    radial-gradient(500px 120px at 10% 20%, rgba(76,125,255,.14), transparent 60%),
-    rgba(0,0,0,.18);
 }
 
-/* własna strzałka dropdown (bez HTML zmian) */
 .cell-wrapper{
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.12);
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
+  box-shadow: 0 10px 28px rgba(0,0,0,.35);
   position: relative;
 }
 
@@ -440,16 +370,24 @@ body::after{
   pointer-events: none;
 }
 
-/* focus całego komponentu */
 .cell-wrapper:focus-within{
   border-color: rgba(76,125,255,.55);
   box-shadow: 0 0 0 3px rgba(76,125,255,.18), 0 12px 34px rgba(0,0,0,.45);
 }
 
-/* usuń marginesy które psuły układ */
-.cell-user{ margin-top: 0 !important; }
-.user-select{ border-radius: 0 !important; } /* bo select jest w obudowie */
+.cell-user{
+  margin-top: 0 !important;
+}
 
+.user-select{
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 0 !important;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color: rgba(234,240,255,.92);
+  outline: none;
+}
 
 .form{
   display: grid;
@@ -494,7 +432,6 @@ body::after{
   font-size: 14px;
 }
 
-/* Logout button pinned to edge */
 .logout-form{
   position: fixed;
   top: 16px;
@@ -513,29 +450,21 @@ body::after{
   background: rgba(255, 45, 45, .96);
 }
 
-/* =========================
-   CUSTOM DROPDOWN (JS) - overlay na przycisku
-   ========================= */
-
-/* wrapper ulepszony przez JS */
 .cd.cell-wrapper{
-  overflow: visible !important;   /* inaczej dropdown jest przycięty */
+  overflow: visible !important;
 }
 
-/* wyłącz historyczną strzałkę wrappera (strzałka ma być na przycisku) */
 .cd.cell-wrapper::after{
   content: none !important;
 }
 
-/* kotwica tylko dla button+list (dropdown liczy się od przycisku) */
 .cd__anchor{
   position: relative;
 }
 
-/* przycisk (zastępuje select) */
 .cd__button{
   width: 100%;
-  position: relative;             /* strzałka trzyma się przycisku */
+  position: relative;
   border: 0;
   border-top: 1px solid rgba(255,255,255,.10);
   padding: 10px 40px 10px 14px;
@@ -543,9 +472,7 @@ body::after{
   color: rgba(234,240,255,.86);
   text-align: left;
   cursor: pointer;
-
-  background:
-    radial-gradient(500px 120px at 10% 20%, rgba(76,125,255,.14), transparent 60%),
+  background: radial-gradient(500px 120px at 10% 20%, rgba(76,125,255,.14), transparent 60%),
     rgba(0,0,0,.18);
 }
 
@@ -553,7 +480,6 @@ body::after{
   outline: none;
 }
 
-/* strzałka NA przycisku */
 .cd__button::after{
   content: "▾";
   position: absolute;
@@ -565,23 +491,18 @@ body::after{
   pointer-events: none;
 }
 
-/* lista: OVERLAY na przycisku (spawn w tym samym miejscu) */
 .cd__list{
   position: absolute;
   left: 0;
   right: 0;
-  top: 0;                         /* <<< overlay na buttonie */
-
+  top: 0;
   background: #05060b;
   border: 1px solid rgba(255,255,255,.12);
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0,0,0,.6);
-
   max-height: 240px;
   overflow-y: auto;
   z-index: 999;
-
-  /* animacja */
   opacity: 0;
   transform: translateY(-2px) scale(0.99);
   pointer-events: none;
@@ -594,13 +515,11 @@ body::after{
   pointer-events: auto;
 }
 
-/* gdy otwarte: chowamy button, bo lista go zastępuje */
 .cd--open .cd__button{
   opacity: 0;
   pointer-events: none;
 }
 
-/* opcje */
 .cd__option{
   padding: 10px 12px;
   cursor: pointer;
@@ -616,14 +535,12 @@ body::after{
   color: rgba(234,240,255,.45);
 }
 
-
-/* === CONFETTI: floor burst przy tabeli === */
 .confetti{
   position: fixed;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 9998; /* pod toastem */
+  z-index: 9998;
 }
 
 .confetti__piece{
@@ -643,47 +560,13 @@ body::after{
     opacity: 1;
   }
 }
-/* =========================================================
-   RAFFLE ( /raffle/ ) — SINGLE SOURCE OF TRUTH
-   - stabilny render od razu (bez “naprawy po rerollu”)
-   - grid 4x4 z kafelkami
-   - brak prześwitów innych plansz (prev/next ukryte)
-   - strzałki widoczne i nieucinane
-   ========================================================= */
 
-/* kontener planszy (mniej więcej -25% jak chciałeś) */
-.raffle-shell{
-  width: min(560px, 82vw);
-  margin: 0 auto;
-  position: relative;
-  overflow: visible; /* strzałki mogą wystawać */
-}
-
-/* scena: trzyma wymiar, ucina “duchy” */
 .raffle-stage{
   position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;   /* kwadrat dla 4x4 */
-  overflow: hidden;      /* ucinamy wszystko poza sceną */
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
   box-sizing: border-box;
-}
-
-/* każda plansza jako warstwa w scenie */
-.raffle-board--set{
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  padding: 16px;         /* padding przeniesiony tutaj (stabilny render) */
-  box-sizing: border-box;
-}
-
-/* pokazujemy tylko aktywną (żadnych prześwitów) */
-.raffle-board--active{
-  opacity: 1;
-  transform: translateX(0) scale(1);
-  filter: none;
-  z-index: 3;
 }
 
 .raffle-board--prev,
@@ -696,7 +579,6 @@ body::after{
   z-index: 1;
 }
 
-/* GRID 4x4 — minmax(0,1fr) zapobiega ucinaniu kolumny na starcie */
 .raffle-grid{
   width: 100%;
   height: 100%;
@@ -704,22 +586,19 @@ body::after{
   grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-template-rows: repeat(4, minmax(0, 1fr));
   gap: 12px;
-  padding: 0;            /* padding jest w board--set */
+  padding: 0;
   box-sizing: border-box;
 }
 
-/* kafelek */
 .raffle-tile{
   width: 100%;
   height: 100%;
   min-width: 0;
   min-height: 0;
-
   border-radius: 14px;
   background: rgba(255,255,255,.06);
   border: 1px solid rgba(255,255,255,.12);
   box-shadow: 0 10px 26px rgba(0,0,0,.30);
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -727,7 +606,6 @@ body::after{
   box-sizing: border-box;
 }
 
-/* tekst w kafelku */
 .raffle-text{
   min-width: 0;
   text-align: center;
@@ -735,45 +613,41 @@ body::after{
   font-size: 14px;
   line-height: 1.15;
   color: rgba(240,245,255,.95);
-
   overflow: hidden;
   overflow-wrap: anywhere;
   word-break: break-word;
-
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
 }
 
-/* strzałki */
 .raffle-nav{
   display: grid;
   place-items: center;
-
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-
   height: 44px;
   width: 44px;
   border-radius: 14px;
-
   border: 1px solid rgba(255,255,255,.16);
   background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.12));
   box-shadow: 0 14px 28px rgba(0,0,0,.45);
-
   font-size: 26px;
   font-weight: 800;
   line-height: 1;
   cursor: pointer;
-
   z-index: 9999;
 }
 
-.raffle-nav--left{ left: -58px; }
-.raffle-nav--right{ right: -58px; }
+.raffle-nav--left{
+  left: -58px;
+}
 
-/* przyciski + badge */
+.raffle-nav--right{
+  right: -58px;
+}
+
 .raffle-actions{
   margin-top: 16px;
   display: flex;
@@ -790,7 +664,9 @@ body::after{
   box-shadow: 0 10px 24px rgba(0,0,0,.25);
 }
 
-.btn-wrap .btn{ border-radius: 0; }
+.btn-wrap .btn{
+  border-radius: 0;
+}
 
 .btn-badge{
   display: inline-flex;
@@ -804,62 +680,71 @@ body::after{
   color: rgba(234,240,255,.92);
 }
 
-.btn-badge--disabled{ opacity: .45; }
-/* =========================
-   RAFFLE ANIMATIONS (ADD-ON)
-   ========================= */
+.btn-badge--disabled{
+  opacity: .45;
+}
 
-/* łagodne wejście na stronę */
 .raffle-shell{
+  width: min(560px, 82vw);
+  margin: 0 auto;
+  position: relative;
+  overflow: visible;
   animation: raffle-pop 520ms cubic-bezier(.2,.9,.2,1) both;
 }
+
 @keyframes raffle-pop{
   from{ transform: translateY(22px); opacity: 0; }
   to{ transform: translateY(0); opacity: 1; }
 }
 
-/* animacja zmiany planszy (strzałki) */
 .raffle-board--set{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
   transition: transform 240ms ease, opacity 240ms ease;
   will-change: transform, opacity;
 }
 
-/* aktywna: normalnie */
 .raffle-board--active{
   opacity: 1;
   transform: translateX(0) scale(1);
+  filter: none;
+  z-index: 3;
 }
 
-/* jeżeli kiedyś wrócisz do peek: te klasy już będą animowane */
 .raffle-board--prev{
   opacity: 0;
   transform: translateX(-18px) scale(.98);
 }
+
 .raffle-board--next{
   opacity: 0;
   transform: translateX(18px) scale(.98);
 }
+
 .raffle-board--hidden{
   opacity: 0;
   transform: translateX(0) scale(.98);
 }
 
-/* animacja “reroll” – na samą zawartość kafelków */
 .raffle-grid.is-rerolling{
   animation: raffle-reroll 260ms ease both;
 }
+
 @keyframes raffle-reroll{
   from{ opacity: .55; transform: scale(.992); filter: saturate(.92); }
   to{ opacity: 1; transform: scale(1); filter: saturate(1); }
 }
 
-/* dostępność */
 @media (prefers-reduced-motion: reduce){
   .raffle-shell{ animation: none !important; }
   .raffle-board--set{ transition: none !important; }
   .raffle-grid.is-rerolling{ animation: none !important; }
 }
-/* ===== SHUFFLE ANIMATION HELPERS ===== */
+
 .raffle-grid.is-shuffling .raffle-tile{
   pointer-events: none;
 }
