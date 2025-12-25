@@ -13,13 +13,13 @@ window.BingoUserPlugin.init = function (api) {
 
     // side spawn:
     sideMargin: 12,
-    sideBandWidth: 220,      // szerokość pasa po bokach (px)
+    sideBandWidth: 220,      
     topPad: 10,
     bottomPad: 10,
   };
 
   // ===== SPACEGLIDING TOGGLE =====
-  const MUSIC_URL = "/static/bingo/sfx/everything_black.mp3"; // <- podmień ścieżkę
+  const MUSIC_URL = "/static/bingo/sfx/everything_black.mp3"; 
   let spaceOn = false;
   
 
