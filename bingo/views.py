@@ -213,7 +213,9 @@ def raffle(request):
     request.session["raffle_grids"] = grids
     request.session["raffle_used_global"] = [list(x) for x in used_global]
     request.session["raffle_rerolls_used"] = 0
+    request.session["raffle_shuffles_used"] = 0
     request.session.modified = True
+    
 
     grids_2d = [_grid_to_2d(g, size=4) for g in grids]
     return render(request, "raffle.html", {"grids": grids_2d})
@@ -278,3 +280,16 @@ def raffle_reroll_all(request):
         "rerolls_used": rerolls_used,
         "cells": [it["text"] if it else "—" for it in new_items],  # 16
     })
+@login_required
+@require_POST
+def raffle_shuffle_use(request):
+    used = request.session.get("raffle_shuffles_used", 0)
+    if not isinstance(used, int):
+        used = 0
+    if used >= 3:
+        return JsonResponse({"ok": False, "error": "Limit shuffle 3/3."}, status=403)
+
+    used += 1
+    request.session["raffle_shuffles_used"] = used
+    request.session.modified = True
+    return JsonResponse({"ok": True, "shuffles_used": used})
