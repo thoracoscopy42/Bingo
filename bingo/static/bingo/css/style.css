@@ -234,9 +234,6 @@ body{
 }
 
 
-
-
-
 body::before,
 body::after{
   content: "";
@@ -646,111 +643,137 @@ body::after{
     opacity: 1;
   }
 }
+/* =========================================================
+   RAFFLE ( /raffle/ ) — SINGLE SOURCE OF TRUTH
+   - stabilny render od razu (bez “naprawy po rerollu”)
+   - grid 4x4 z kafelkami
+   - brak prześwitów innych plansz (prev/next ukryte)
+   - strzałki widoczne i nieucinane
+   ========================================================= */
 
-
-
-
-/* ===== RAFFLE BINGO BOARD ===== */
-.raffle-grid{
-  width: 100%;
-  height: 100%;
-
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(4, 1fr);
-
-  gap: 14px;
-}
-
-/* kafelki nadal kwadratowe */
-.raffle-tile{
-  width: 100%;
-  height: 100%;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  aspect-ratio: 1 / 1;
-}
-
-/* ===== CAROUSEL / PEEK ===== */
+/* kontener planszy (mniej więcej -25% jak chciałeś) */
 .raffle-shell{
+  width: min(560px, 82vw);
+  margin: 0 auto;
   position: relative;
-  width: min(760px, 92vw);
-  margin: 10px auto 0;
-  overflow: visible; /* ok */
+  overflow: visible; /* strzałki mogą wystawać */
 }
 
+/* scena: trzyma wymiar, ucina “duchy” */
 .raffle-stage{
   position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;  /* ✅ trzyma stały rozmiar (4x4 kwadraty => całość kwadratowa) */
-  overflow: hidden;      /* ✅ nie pozwala “uciekać” preview i rozwalać layoutu */
+  aspect-ratio: 1 / 1;   /* kwadrat dla 4x4 */
+  overflow: hidden;      /* ucinamy wszystko poza sceną */
+  box-sizing: border-box;
 }
 
-/* Plansze nakładamy na siebie i przesuwamy transformami */
+/* każda plansza jako warstwa w scenie */
 .raffle-board--set{
   position: absolute;
   inset: 0;
-  transition: transform 240ms ease, opacity 240ms ease, filter 240ms ease;
-  will-change: transform;
+  width: 100%;
+  height: 100%;
+  padding: 16px;         /* padding przeniesiony tutaj (stabilny render) */
+  box-sizing: border-box;
 }
 
+/* pokazujemy tylko aktywną (żadnych prześwitów) */
 .raffle-board--active{
-  /* zostaje absolute jak reszta */
   opacity: 1;
-  filter: blur(0);
   transform: translateX(0) scale(1);
+  filter: none;
   z-index: 3;
 }
 
-/* podgląd poprzedniej i następnej */
-.raffle-board--prev{
-  opacity: .55;
-  filter: blur(1px);
-  transform: translateX(-65%) scale(.85);
-  z-index: 2;
-  pointer-events: none;
-}
-
-.raffle-board--next{
-  opacity: .55;
-  filter: blur(1px);
-  transform: translateX(65%) scale(.85);
-  z-index: 2;
-  pointer-events: none;
-}
-
-/* reszta ukryta */
+.raffle-board--prev,
+.raffle-board--next,
 .raffle-board--hidden{
   opacity: 0;
-  transform: translateX(0) scale(.8);
+  transform: translateX(0) scale(1);
+  filter: none;
   pointer-events: none;
   z-index: 1;
 }
 
-/* strzałki na środku boków */
+/* GRID 4x4 — minmax(0,1fr) zapobiega ucinaniu kolumny na starcie */
+.raffle-grid{
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;            /* padding jest w board--set */
+  box-sizing: border-box;
+}
+
+/* kafelek */
+.raffle-tile{
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+
+  border-radius: 14px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 10px 26px rgba(0,0,0,.30);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+/* tekst w kafelku */
+.raffle-text{
+  min-width: 0;
+  text-align: center;
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 1.15;
+  color: rgba(240,245,255,.95);
+
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+/* strzałki */
 .raffle-nav{
+  display: grid;
+  place-items: center;
+
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  height: 42px;
-  width: 42px;
+
+  height: 44px;
+  width: 44px;
   border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.14);
+
+  border: 1px solid rgba(255,255,255,.16);
   background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.12));
-  box-shadow: 0 10px 24px rgba(0,0,0,.35);
+  box-shadow: 0 14px 28px rgba(0,0,0,.45);
+
   font-size: 26px;
   font-weight: 800;
   line-height: 1;
   cursor: pointer;
-  z-index: 10;
-}
-.raffle-nav--left{ left: -54px; }
-.raffle-nav--right{ right: -54px; }
 
-/* ===== Przyciski z “doklejką” ===== */
+  z-index: 9999;
+}
+
+.raffle-nav--left{ left: -58px; }
+.raffle-nav--right{ right: -58px; }
+
+/* przyciski + badge */
 .raffle-actions{
   margin-top: 16px;
   display: flex;
@@ -767,9 +790,7 @@ body::after{
   box-shadow: 0 10px 24px rgba(0,0,0,.25);
 }
 
-.btn-wrap .btn{
-  border-radius: 0;
-}
+.btn-wrap .btn{ border-radius: 0; }
 
 .btn-badge{
   display: inline-flex;
@@ -782,16 +803,63 @@ body::after{
   background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.12));
   color: rgba(234,240,255,.92);
 }
-.btn-badge--disabled{
-  opacity: .45;
+
+.btn-badge--disabled{ opacity: .45; }
+/* =========================
+   RAFFLE ANIMATIONS (ADD-ON)
+   ========================= */
+
+/* łagodne wejście na stronę */
+.raffle-shell{
+  animation: raffle-pop 520ms cubic-bezier(.2,.9,.2,1) both;
+}
+@keyframes raffle-pop{
+  from{ transform: translateY(22px); opacity: 0; }
+  to{ transform: translateY(0); opacity: 1; }
 }
 
-/* ważne dla carousel – board MUSI mieć rozmiar */
+/* animacja zmiany planszy (strzałki) */
 .raffle-board--set{
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  transition: transform 240ms ease, opacity 240ms ease, filter 240ms ease;
-  will-change: transform;
+  transition: transform 240ms ease, opacity 240ms ease;
+  will-change: transform, opacity;
+}
+
+/* aktywna: normalnie */
+.raffle-board--active{
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+/* jeżeli kiedyś wrócisz do peek: te klasy już będą animowane */
+.raffle-board--prev{
+  opacity: 0;
+  transform: translateX(-18px) scale(.98);
+}
+.raffle-board--next{
+  opacity: 0;
+  transform: translateX(18px) scale(.98);
+}
+.raffle-board--hidden{
+  opacity: 0;
+  transform: translateX(0) scale(.98);
+}
+
+/* animacja “reroll” – na samą zawartość kafelków */
+.raffle-grid.is-rerolling{
+  animation: raffle-reroll 260ms ease both;
+}
+@keyframes raffle-reroll{
+  from{ opacity: .55; transform: scale(.992); filter: saturate(.92); }
+  to{ opacity: 1; transform: scale(1); filter: saturate(1); }
+}
+
+/* dostępność */
+@media (prefers-reduced-motion: reduce){
+  .raffle-shell{ animation: none !important; }
+  .raffle-board--set{ transition: none !important; }
+  .raffle-grid.is-rerolling{ animation: none !important; }
+}
+/* ===== SHUFFLE ANIMATION HELPERS ===== */
+.raffle-grid.is-shuffling .raffle-tile{
+  pointer-events: none;
 }
