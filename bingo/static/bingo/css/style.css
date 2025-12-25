@@ -761,7 +761,7 @@ body::after{
 #plugin-root{
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  /* z-index: 9999;  */
   pointer-events: none;
 }
 .plugin-floating{
@@ -778,7 +778,21 @@ body::after{
 
 .plugin-placeholder{ opacity: 0.25; filter: grayscale(1); }
 
-/* opcjonalnie: lekka ramka na floating żeby było widać */
-/* .plugin-floating .cell-wrapper{
-  box-shadow: 0 10px 30px rgba(0,0,0,.25);
-} */
+/* placeholder w tabeli po teleportacji tile */
+.cell-wrapper.plugin-placeholder{
+  opacity: 0 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+}
+
+/* jeśli placeholder ma jakiekolwiek dzieci (na wszelki wypadek) */
+.cell-wrapper.plugin-placeholder *{
+  opacity: 0 !important;
+}
+/* to odkomentować jeśli zostaną jakieś artefakty w tabelce */
+/* .grid-table td:has(.plugin-placeholder){
+  background: transparent !important; 
+  } */
+

@@ -6,8 +6,8 @@ window.BingoUserPlugin.init = function (api) {
   const CFG = {
     maxFloating: 6,
     vanishAnimMs: 1000,      // 1s fade→gray w tabeli / na stronie
-    cloakMs: 6000,           // ile ma być "na niewidce" po zniknięciu
-    minGapMs: 30000,         // >= 30s przerwy między prankami
+    cloakMs: 7000,           // ile ma być "na niewidce" po zniknięciu
+    minGapMs: 60000,         // >= 60s przerwy między prankami
     sfxHideVol: 0.55,
     sfxRevealVol: 0.65,
 
@@ -22,7 +22,7 @@ window.BingoUserPlugin.init = function (api) {
   const floating = new Map();
   const cloaked = new Set(); // tile aktualnie "na niewidce" (żeby nie brać go drugi raz)
 
-  let nextAllowedAt = 0;
+  let nextAllowedAt = Date.now() + 30000; //delay po starcie strony 40 sek
 
   function now() { return Date.now(); }
 
@@ -46,30 +46,47 @@ window.BingoUserPlugin.init = function (api) {
   function playHide() { api.playSfx(pick(api.sfx?.hide), { volume: CFG.sfxHideVol }); }
   function playReveal() { api.playSfx(pick(api.sfx?.reveal), { volume: CFG.sfxRevealVol }); }
 
-  function randomSidePos() {
-    const padX = CFG.sideMargin;
-    const band = CFG.sideBandWidth;
+function randomSidePos() {
+  const padX = CFG.sideMargin;
+  const band = CFG.sideBandWidth;
 
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
 
-    const xLeft = padX + Math.random() * band;
-    const xRight = w - padX - band + Math.random() * band;
+  const xLeft = padX + Math.random() * band;
+  const xRight = w - padX - band + Math.random() * band;
 
-    const x = (Math.random() < 0.5) ? xLeft : xRight;
+  let x = (Math.random() < 0.5) ? xLeft : xRight;
 
-    const yMin = CFG.topPad;
-    const yMax = Math.max(yMin, h - CFG.bottomPad);
-    const y = yMin + Math.random() * (yMax - yMin);
+  const yMin = CFG.topPad;
+  const yMax = Math.max(yMin, h - CFG.bottomPad);
+  let y = yMin + Math.random() * (yMax - yMin);
 
-    return { x, y };
-  }
+  // ===== CLAMP DO VIEWPORTU =====
+  const EDGE = 12; // margines bezpieczeństwa
+  x = Math.max(EDGE, Math.min(w - EDGE, x));
+  y = Math.max(EDGE, Math.min(h - EDGE, y));
+  // ==============================
+
+  return { x, y };
+}
+
 
   function placeFloating(tele) {
-    const p = randomSidePos();
-    tele.floating.style.left = `${p.x}px`;
-    tele.floating.style.top = `${p.y}px`;
-  }
+  const p = randomSidePos();
+  tele.floating.style.left = `${p.x}px`;
+  tele.floating.style.top = `${p.y}px`;
+
+  // korekta po layout
+  requestAnimationFrame(() => {
+    const r = tele.floating.getBoundingClientRect();
+    const x = Math.max(8, Math.min(window.innerWidth - r.width - 8, r.left));
+    const y = Math.max(8, Math.min(window.innerHeight - r.height - 8, r.top));
+    tele.floating.style.left = `${x}px`;
+    tele.floating.style.top = `${y}px`;
+  });
+}
+
 
   function cloakElement(el, on) {
     // "na niewidce": nie blokuje layoutu, nie klikalny, niewidoczny
