@@ -45,6 +45,10 @@
           <button class="btn btn--secondary" type="button" id="btnShuffle">SHUFFLE</button>
           <div class="btn-badge" id="badgeShuffle">3</div>
         </div>
+        <div class="btn-wrap">
+          <button class="btn btn--secondary" type="button" id="btnPick">WYBIERAM CIEBIE</button>
+          <div class="btn-badge btn-badge--disabled" id="badgePick">JSON</div>
+        </div>
       </div>
 
     </div>
@@ -66,6 +70,7 @@
 
   const btnReroll = document.getElementById("btnReroll");
   const btnShuffle = document.getElementById("btnShuffle");
+  const btnPick = document.getElementById("btnPick");
 
   const badgeReroll = document.getElementById("badgeReroll");
   const badgeShuffle = document.getElementById("badgeShuffle");
@@ -265,6 +270,33 @@ btnShuffle.addEventListener("click", async () => {
       }
     });
   }
+// WYBIERAM CIEBIE -> zczytaj aktualny grid (po shuffle też) i wypisz JSON w konsoli
+if (btnPick) {
+  btnPick.addEventListener("click", () => {
+    const board = boards[active];
+    if (!board) return;
+
+    const texts = Array.from(board.querySelectorAll(".raffle-text"))
+      .map(el => (el.textContent || "").trim());
+
+    // układ 4x4 z DOM (kolejność w HTML = kolejność w gridzie)
+    const size = 4;
+    const grid2d = [];
+    for (let r = 0; r < size; r++) {
+      grid2d.push(texts.slice(r * size, r * size + size));
+    }
+
+    const payload = {
+      active_grid_index: active,
+      size: size,
+      generated_at: new Date().toISOString(),
+      grid: grid2d,
+      flat: texts
+    };
+
+    console.log(JSON.stringify(payload, null, 2));
+  });
+}
 
 })();
 </script>
