@@ -31,6 +31,10 @@ body{
     linear-gradient(180deg, var(--bg), var(--bg2));
 }
 
+body.spaceglide{
+  background-image: url("/static/bingo/images/spacegliding.jpg");
+}
+
 .page{
   min-height: 100%;
   display: flex;

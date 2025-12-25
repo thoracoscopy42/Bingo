@@ -21,11 +21,12 @@ window.BingoUserPlugin.init = function (api) {
   // ===== SPACEGLIDING TOGGLE =====
   const MUSIC_URL = "/static/bingo/sfx/yippee.mp3"; // <- podmień ścieżkę
   let spaceOn = false;
+  
 
   const music = new Audio(MUSIC_URL);
   music.loop = true;
   music.preload = "auto";
-  music.volume = 0.25; // możesz sterować
+  music.volume = 0.35; // 
 
   function updateBtn() {
     btn.dataset.on = spaceOn ? "1" : "0";
@@ -35,6 +36,8 @@ window.BingoUserPlugin.init = function (api) {
   async function setSpace(on) {
     spaceOn = !!on;
     updateBtn();
+
+    document.body.classList.toggle("spaceglide", spaceOn);
 
     if (spaceOn) {
       // play() może zwrócić promise i czasem się wywali — łapiemy
