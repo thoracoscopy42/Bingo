@@ -141,6 +141,3 @@ STORAGES = {
 LOGIN_URL = "/"
 LOGIN_REDIRECT_URL = "/game/"
 LOGOUT_REDIRECT_URL = "/"
-
-import django_heroku
-django_heroku.settings(locals())
