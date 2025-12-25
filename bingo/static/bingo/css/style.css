@@ -679,9 +679,10 @@ body::after{
   overflow: hidden; /* ok */
 }
 
-.raffle-stage{      /* ⬅️ ZAMIANA */
+.raffle-stage{
+  position: relative;
   overflow: hidden;
-  aspect-ratio: unset;      /* ✅ nie pozwala “uciekać” preview i rozwalać layoutu */
+  aspect-ratio: 1 / 1;  /* daje stałą wysokość dla absolutnych plansz */
 }
 .raffle-board--active{
   /* zostaje absolute jak reszta */
@@ -777,8 +778,7 @@ body::after{
 .raffle-board--set{
   position: absolute;
   inset: 0;
-  display: grid; 
+  width: 100%;
+  height: 100%;
 }
-.raffle-board--active{
-  position: relative;    /* ⬅️ tylko aktywna plansza „trzyma” wysokość */
-}
+
