@@ -80,19 +80,5 @@
 {% block scripts %}
   <script defer src="{% static 'bingo/js/game.js' %}"></script>
 
-  <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const audio = document.getElementById("rerollSound");
-    console.log("audio element:", audio);
-    console.log("audio src:", audio?.src);
-  });
-
-  fetch("{% static 'bingo/sfx/reroll.mp3' %}", { method: "HEAD" })
-    .then(r => {
-      console.log("audio HEAD status:", r.status);
-      console.log("content-type:", r.headers.get("content-type"));
-    })
-    .catch(e => console.error("audio HEAD error:", e));
-</script>
 {% endblock %}
 
