@@ -148,6 +148,9 @@
     form.append("grid", String(active));
 
     btnReroll.disabled = true;
+    const board = boards[active];
+    const gridEl = board.querySelector(".raffle-grid");
+    gridEl?.classList.add("is-rerolling");
 
     try {
       const res = await fetch("{% url 'raffle_reroll_all' %}", {
@@ -168,7 +171,10 @@
       updateBadges();
     } catch (e) {
       console.error(e);
-    } finally {
+    }  finally {
+  setTimeout(() => gridEl?.classList.remove("is-rerolling"), 260);
+  updateBadges();
+    }
       updateBadges();
     }
   });

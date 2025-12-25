@@ -805,3 +805,57 @@ body::after{
 }
 
 .btn-badge--disabled{ opacity: .45; }
+/* =========================
+   RAFFLE ANIMATIONS (ADD-ON)
+   ========================= */
+
+/* łagodne wejście na stronę */
+.raffle-shell{
+  animation: raffle-pop 520ms cubic-bezier(.2,.9,.2,1) both;
+}
+@keyframes raffle-pop{
+  from{ transform: translateY(22px); opacity: 0; }
+  to{ transform: translateY(0); opacity: 1; }
+}
+
+/* animacja zmiany planszy (strzałki) */
+.raffle-board--set{
+  transition: transform 240ms ease, opacity 240ms ease;
+  will-change: transform, opacity;
+}
+
+/* aktywna: normalnie */
+.raffle-board--active{
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+/* jeżeli kiedyś wrócisz do peek: te klasy już będą animowane */
+.raffle-board--prev{
+  opacity: 0;
+  transform: translateX(-18px) scale(.98);
+}
+.raffle-board--next{
+  opacity: 0;
+  transform: translateX(18px) scale(.98);
+}
+.raffle-board--hidden{
+  opacity: 0;
+  transform: translateX(0) scale(.98);
+}
+
+/* animacja “reroll” – na samą zawartość kafelków */
+.raffle-grid.is-rerolling{
+  animation: raffle-reroll 260ms ease both;
+}
+@keyframes raffle-reroll{
+  from{ opacity: .55; transform: scale(.992); filter: saturate(.92); }
+  to{ opacity: 1; transform: scale(1); filter: saturate(1); }
+}
+
+/* dostępność */
+@media (prefers-reduced-motion: reduce){
+  .raffle-shell{ animation: none !important; }
+  .raffle-board--set{ transition: none !important; }
+  .raffle-grid.is-rerolling{ animation: none !important; }
+}
