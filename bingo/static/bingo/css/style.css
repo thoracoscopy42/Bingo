@@ -32,19 +32,19 @@ body{
 }
 
 /* Spaceglide: tło całej strony GIF */
-/* body.spaceglide{
+body.spaceglide{
   background-image: url("/static/bingo/images/spaceglide.gif");
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
   background-repeat: no-repeat;
-} */
+}
 
 /* przyciemnij UI żeby było czytelne */
-/* body.spaceglide .panel{
+body.spaceglide .panel{
   background: rgba(0,0,0,0.78) !important;
   border-color: rgba(255,255,255,0.12) !important;
-} */
+}
 
 /* opcjonalnie: table też ciemniej */
 /* body.spaceglide .grid-table{
