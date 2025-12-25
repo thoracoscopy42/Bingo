@@ -78,3 +78,7 @@
   {% load static %}
   <script defer src="{% static 'bingo/js/game.js' %}"></script>
 {% endblock %}
+
+<script>
+  window.STATIC_BASE = "{% static 'bingo/' %}";
+</script>

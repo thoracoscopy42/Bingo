@@ -3,7 +3,7 @@
 
 
   // ===== SAVE SOUND (global, for everyone) =====
-    const SAVE_SOUND_URL = "/static/bingo/sfx/yipiee.mp3";
+    const SAVE_SOUND_URL = (window.STATIC_BASE || "/static/bingo/") + "sfx/yipiee-tbh.mp3";
     const SAVE_SOUND_VOLUME = 0.35;     // 0.0 - 1.0
     const SAVE_SOUND_COOLDOWN = 500;   
 
