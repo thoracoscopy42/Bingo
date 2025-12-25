@@ -72,11 +72,11 @@
 {% comment %} jeśli istnieje już zapisany template to go wrzucamy na stronkę, inaczej blank {% endcomment %}
 {{ saved_grid|json_script:"saved-grid" }}
 {{ request.user.username|json_script:"current-user" }}
-
+{% load static %}
 {% endblock %}
 
 {% block scripts %}
-  {% load static %}
+  
   <script defer src="{% static 'bingo/js/game.js' %}"></script>
 {% endblock %}
 
