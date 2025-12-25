@@ -126,9 +126,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 #nasze pliki statyczne
-STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+#pliki statyczne już w deploymencie
+STATICROOT = os.path.join(BASE_DIR, 'staticfiles')
+# file caching żeby przeglądarka się refreshowała i zbierała pliki typu cs js i obrazki przy każdym updacie
 STORAGES = {
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
@@ -141,3 +143,6 @@ STORAGES = {
 LOGIN_URL = "/"
 LOGIN_REDIRECT_URL = "/game/"
 LOGOUT_REDIRECT_URL = "/"
+
+import django_heroku
+django_heroku.settings(locals())
