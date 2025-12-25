@@ -3,31 +3,10 @@
 
 
   // ===== SAVE SOUND (global, for everyone) =====
-    const BASE = window.STATIC_BASE || "/static/bingo/";
-    const SAVE_SOUND_URL = BASE + "sfx/yipiee-tbh.mp3"; // uwaga na NAZWĘ
+    const saveAudio = new Audio(window.SAVE_SOUND_URL);
+saveAudio.preload = "auto";
+saveAudio.volume = 0.25;
 
-    const SAVE_SOUND_VOLUME = 0.35;     // 0.0 - 1.0
-    const SAVE_SOUND_COOLDOWN = 500;   
-
-    const saveAudio = new Audio(SAVE_SOUND_URL);
-    saveAudio.preload = "auto";
-    saveAudio.volume = SAVE_SOUND_VOLUME;
-
-    let lastSaveSoundAt = 0;
-
-    function playSaveSound() {
-      const now = Date.now();
-      if (now - lastSaveSoundAt < SAVE_SOUND_COOLDOWN) return;
-      lastSaveSoundAt = now;
-
-      // restart
-      saveAudio.pause();
-      saveAudio.currentTime = 0;
-
-      saveAudio.play().catch(() => {
-        // jeżeli przeglądarka odmówi (rzadko przy kliknięciu), ignorujemy
-      });
-    }
     // END OF SOUND
 
   // bierzemy helpery z app.js
