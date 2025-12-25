@@ -21,6 +21,21 @@ window.BingoUserPlugin.init = function (api) {
   // ===== SPACEGLIDING TOGGLE =====
   const MUSIC_URL = "/static/bingo/sfx/everything_black.mp3"; 
   let spaceOn = false;
+  const style = document.createElement("style");
+    style.textContent = `
+      body.spaceglide{
+        background-image: url("/static/bingo/images/spacegliding.gif");
+        background-repeat: repeat;
+        background-size: 200px 200px;
+      }
+
+      body.spaceglide .panel{
+        background: rgba(0,0,0,0.85) !important;
+        border-color: rgba(255,255,255,0.12) !important;
+      }
+    `;
+    document.head.appendChild(style);
+
   
 
   const music = new Audio(MUSIC_URL);
@@ -48,13 +63,31 @@ window.BingoUserPlugin.init = function (api) {
     }
   }
 
-  // UI
-  const root = document.getElementById("plugin-root");
-  const wrap = document.createElement("div");
-  wrap.className = "plugin-toggle";
+  // UI - przycisk manualnie dodany do strony
+  const root = document.getElementById("plugin-root") || document.body;
 
+  const wrap = document.createElement("div");
   const btn = document.createElement("button");
   btn.type = "button";
+
+  // ===== STYLE: ŚRODEK EKRANU =====
+  wrap.style.position = "fixed";
+  wrap.style.left = "50%";
+  wrap.style.top = "50%";
+  wrap.style.transform = "translate(-50%, -50%)";
+  wrap.style.zIndex = "99999";
+  wrap.style.pointerEvents = "none";
+
+  btn.style.pointerEvents = "auto";
+  btn.style.padding = "18px 28px";
+  btn.style.fontSize = "20px";
+  btn.style.fontWeight = "800";
+  btn.style.borderRadius = "999px";
+  btn.style.border = "2px solid rgba(42,255,140,0.9)";
+  btn.style.background = "rgba(0,0,0,0.82)";
+  btn.style.color = "rgba(42,255,140,0.95)";
+  btn.style.cursor = "pointer";
+
   btn.addEventListener("click", () => setSpace(!spaceOn));
 
   wrap.appendChild(btn);
@@ -219,6 +252,8 @@ function randomSidePos() {
   // api.hooks.on("save:ok", prankOnce);
 
   return () => {
-    api.ctx.destroy();
-  };
+  try { style.remove(); } catch {}
+  api.ctx.destroy();
+};
+
 };
