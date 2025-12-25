@@ -3,9 +3,7 @@
 {% block content %}
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<audio id="saveSound" preload="auto">
-  <source src="/static/bingo/sfx/yipiee-tbh.mp3" type="audio/mpeg">
-</audio>
+<audio id="saveSound" src="{% static 'yipiee-tbh.mp3' %}" preload="auto"></audio>
 
 <script>
   (function () {
