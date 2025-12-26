@@ -71,9 +71,6 @@
 
     let active = 0;
 
-    // START: bierzemy "left" z DOM (czyli z DB przez template)
-    let rerollsLeft = toInt(badgeReroll?.textContent, 0);
-    let shufflesLeft = toInt(badgeShuffle?.textContent, 0);
 
     function applyClasses() {
       if (!boards.length) return;
@@ -90,23 +87,24 @@
         else b.classList.add("raffle-board--hidden");
       });
     }
-
+      let rerollsLeft = Number(badgeReroll?.textContent || 0);
+      let shufflesLeft = Number(badgeShuffle?.textContent || 0);  
     function updateBadges() {
-      const rl = Math.max(0, toInt(rerollsLeft, 0));
-      const sl = Math.max(0, toInt(shufflesLeft, 0));
+  const rl = Math.max(0, Number.isFinite(rerollsLeft) ? rerollsLeft : 0);
+  const sl = Math.max(0, Number.isFinite(shufflesLeft) ? shufflesLeft : 0);
 
-      if (badgeReroll) {
-        badgeReroll.textContent = String(rl);
-        badgeReroll.classList.toggle("btn-badge--disabled", rl === 0);
-      }
-      if (badgeShuffle) {
-        badgeShuffle.textContent = String(sl);
-        badgeShuffle.classList.toggle("btn-badge--disabled", sl === 0);
-      }
+  if (badgeReroll) {
+    badgeReroll.textContent = String(rl);
+    badgeReroll.classList.toggle("btn-badge--disabled", rl === 0);
+  }
+  if (badgeShuffle) {
+    badgeShuffle.textContent = String(sl);
+    badgeShuffle.classList.toggle("btn-badge--disabled", sl === 0);
+  }
 
-      if (btnReroll) btnReroll.disabled = (rl === 0);
-      if (btnShuffle) btnShuffle.disabled = (sl === 0);
-    }
+  if (btnReroll) btnReroll.disabled = (rl === 0);
+  if (btnShuffle) btnShuffle.disabled = (sl === 0);
+}
 
     function applyLeftFromResponse(data) {
       if (data && typeof data.rerolls_left === "number") rerollsLeft = data.rerolls_left;
