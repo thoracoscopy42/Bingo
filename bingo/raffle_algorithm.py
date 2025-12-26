@@ -131,6 +131,14 @@ def normalize_used_sets(used_sets_raw: Any, grids_count: int = 3) -> List[List[L
         return [[] for _ in range(grids_count)]
     return used_sets_raw
 
+def to_grids_2d(raffle_grids, size=4):
+    out = []
+    for g in raffle_grids:  # g = lista 16 elementów
+        rows = []
+        for r in range(size):
+            rows.append(g[r*size:(r+1)*size])
+        out.append(rows)
+    return out
 
 def normalize_grids(grids: Any, grids_count: int = 3) -> Optional[List[List[Optional[PoolItem]]]]:
     """Sprawdza czy grids z session wygląda poprawnie."""
@@ -250,7 +258,7 @@ def reroll_one_grid(current_user, session_data: dict, post_data: dict, size: int
         if isinstance(item, dict):
             cells.append((item.get("text") or "").strip())
         else:
-            cells.append(str(item))
+            cells.append("—")
 
     payload = {
         "ok": True,

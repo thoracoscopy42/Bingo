@@ -15,8 +15,8 @@ from django.db import transaction
 
 from .user_plugins import get_user_plugin
 from .models import BingoBoard,RaffleState
-from .raffle_algorithm import generate_initial_state,reroll_one_grid,consume_shuffle
-
+from .raffle_algorithm import generate_initial_state,reroll_one_grid,consume_shuffle,to_grids_2d
+        
 
 
 class LandingLoginView(LoginView):
@@ -93,6 +93,7 @@ def save_board(request):
 
     return JsonResponse({"ok": True})
 @login_required
+@login_required
 def raffle(request):
     state, _ = RaffleState.objects.get_or_create(user=request.user)
 
@@ -102,13 +103,11 @@ def raffle(request):
     if not (isinstance(grids_2d, list) and grids_2d):
         session_patch, grids_2d = generate_initial_state(request.user, grids_count=3, size=4)
         state.generated_board_payload = {
-        "raffle_grids": grids_2d,
-        "raffle_used_sets": [[], [], []],
-        "raffle_rerolls_used": 0,
-        "raffle_shuffles_used": 0,
-        "size": 4,
-        "grids_count": 3,
-}
+            **session_patch,      # raffle_grids, raffle_used_sets, raffle_rerolls_used, raffle_shuffles_used
+            "grids_2d": grids_2d, # do rendera w raffle.html
+            "size": 4,
+            "grids_count": 3,
+        }
         state.save(update_fields=["generated_board_payload", "updated_at"])
 
     return render(request, "raffle.html", {
@@ -124,7 +123,6 @@ def raffle_reroll_all(request):
     with transaction.atomic():
         state, _ = RaffleState.objects.select_for_update().get_or_create(user=request.user)
 
-        # limit z bazy
         if state.rerolls_left <= 0:
             return JsonResponse({
                 "ok": False,
@@ -140,11 +138,9 @@ def raffle_reroll_all(request):
             size=4,
         )
 
-        # payload musi być dictem, żeby nie było 500
         if not isinstance(payload, dict):
             payload = {"ok": False, "error": "Invalid server payload"}
 
-        # błąd z algorytmu
         if not ok:
             payload.setdefault("ok", False)
             payload.setdefault("rerolls_left", state.rerolls_left)
@@ -152,17 +148,21 @@ def raffle_reroll_all(request):
             return JsonResponse(payload, status=status)
 
         # sukces -> odejmij limit w DB
-        state.rerolls_left -= 1
+        state.rerolls_left = max(0, state.rerolls_left - 1)
 
-        # zaktualizuj payload w DB patchami z rerolla
+        # zapisz patch do DB
         new_payload = dict(state.generated_board_payload or {})
         if isinstance(patch, dict) and patch:
             new_payload.update(patch)
 
+        # kluczowe: przelicz raffle_grids -> grids_2d, żeby GET /raffle/ renderował aktualny stan
+        size = int(new_payload.get("size") or 4)
+        if isinstance(new_payload.get("raffle_grids"), list):
+            new_payload["grids_2d"] = to_grids_2d(new_payload["raffle_grids"], size=size)
+
         state.generated_board_payload = new_payload
         state.save(update_fields=["rerolls_left", "generated_board_payload", "updated_at"])
 
-        # dopnij liczniki dla frontu (Twoje raffle.js tego używa)
         payload["ok"] = True
         payload["rerolls_left"] = state.rerolls_left
         payload["shuffles_left"] = state.shuffles_left
