@@ -24,6 +24,14 @@
 
     // Sudoku: ilość pustych pól (0..16) – im więcej tym trudniej
     SUDOKU_EMPTY: 8,
+
+    // obrazki 
+    GOOD_IMG: "/static/bingo/images/kamiqxx/goodboy1.gif",
+    BAD_IMGS: [
+      "/static/bingo/images/kamiqxx/badboy.gif",
+      "/static/bingo/images/kamiqxx/badboy2.jpg",
+    ],
+
   };
 
   // ===== helpers =====
@@ -136,7 +144,17 @@
       const tile = document.createElement("button");
       tile.type = "button";
       tile.className = "kys-tile";
-      tile.textContent = "🙂";
+      tile.textContent = "";
+
+      const img = document.createElement("img");
+      img.src = (i === goodIndex)
+        ? CFG.GOOD_IMG
+        : CFG.BAD_IMGS[(Math.random() * CFG.BAD_IMGS.length) | 0];
+
+      img.alt = (i === goodIndex) ? "good boy" : "bad boy";
+      img.draggable = false;
+      tile.appendChild(img);
+
 
       tile.addEventListener("click", (e) => {
         e.preventDefault();
@@ -370,6 +388,16 @@
 .kys-cell--fixed{
   background: rgba(255,255,255,.12);
   opacity: .95;
+
+.kys-tile img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+  pointer-events: none;
+}
+
 }
         `;
         document.head.appendChild(style);
@@ -442,9 +470,21 @@
           overlay.appendChild(modal);
           root.appendChild(overlay);
 
-          // blokuj klik na stronę
-          ctx.on(overlay, "pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); });
-          ctx.on(overlay, "click", (e) => { e.preventDefault(); e.stopPropagation(); });
+          // blokuj klik tylko w tło overlay (nie w modal / inputy)
+            ctx.on(overlay, "pointerdown", (e) => {
+              if (e.target === overlay) {          // klik w tło
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }, { capture: true });
+
+            ctx.on(overlay, "click", (e) => {
+              if (e.target === overlay) {          // klik w tło
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }, { capture: true });
+
 
           setMsg("");
         }
