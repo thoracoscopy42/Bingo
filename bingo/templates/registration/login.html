@@ -7,7 +7,11 @@
     <div class="glow glow--b"></div>
 
     <header class="hero__header">
-      <div class="logo" aria-hidden="true">B</div>
+      {% load static %}
+
+      <img 
+        src="{% static 'bingo/images/logo.png' %}" 
+        alt="Logo Bingo">
       <h1 class="title">Bingo</h1>
     </header>
 
