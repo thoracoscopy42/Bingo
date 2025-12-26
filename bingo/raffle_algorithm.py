@@ -245,11 +245,18 @@ def reroll_one_grid(current_user, session_data: dict, post_data: dict, size: int
         "raffle_rerolls_used": lim.new_used,
     }
 
+    cells = []
+    for item in new_items:
+        if isinstance(item, dict):
+            cells.append((item.get("text") or "").strip())
+        else:
+            cells.append(str(item))
+
     payload = {
         "ok": True,
         "grid": grid_idx,
-        "rerolls_used": lim.new_used,
-        "cells": [it["text"] if it else "—" for it in new_items],
+        "cells": cells,              # <-- TO widzi Twój JS
+        "rerolls_used": lim.new_used # (możesz zostawić, albo usunąć później)
     }
 
     return True, 200, payload, session_patch

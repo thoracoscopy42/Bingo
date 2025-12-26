@@ -102,11 +102,13 @@ def raffle(request):
     if not (isinstance(grids_2d, list) and grids_2d):
         session_patch, grids_2d = generate_initial_state(request.user, grids_count=3, size=4)
         state.generated_board_payload = {
-            "size": 4,
-            "grids_count": 3,
-            "grids_2d": grids_2d,
-            "session_patch": session_patch,
-        }
+        "raffle_grids": grids_2d,
+        "raffle_used_sets": [[], [], []],
+        "raffle_rerolls_used": 0,
+        "raffle_shuffles_used": 0,
+        "size": 4,
+        "grids_count": 3,
+}
         state.save(update_fields=["generated_board_payload", "updated_at"])
 
     return render(request, "raffle.html", {
@@ -122,6 +124,7 @@ def raffle_reroll_all(request):
     with transaction.atomic():
         state, _ = RaffleState.objects.select_for_update().get_or_create(user=request.user)
 
+        # limit z bazy
         if state.rerolls_left <= 0:
             return JsonResponse({
                 "ok": False,
@@ -137,28 +140,29 @@ def raffle_reroll_all(request):
             size=4,
         )
 
+        # payload musi być dictem, żeby nie było 500
         if not isinstance(payload, dict):
             payload = {"ok": False, "error": "Invalid server payload"}
 
+        # błąd z algorytmu
         if not ok:
             payload.setdefault("ok", False)
             payload.setdefault("rerolls_left", state.rerolls_left)
             payload.setdefault("shuffles_left", state.shuffles_left)
             return JsonResponse(payload, status=status)
 
+        # sukces -> odejmij limit w DB
         state.rerolls_left -= 1
 
+        # zaktualizuj payload w DB patchami z rerolla
         new_payload = dict(state.generated_board_payload or {})
         if isinstance(patch, dict) and patch:
             new_payload.update(patch)
 
-        grids = payload.get("grids")
-        if isinstance(grids, list) and grids:
-            new_payload["grids_2d"] = grids
-
         state.generated_board_payload = new_payload
         state.save(update_fields=["rerolls_left", "generated_board_payload", "updated_at"])
 
+        # dopnij liczniki dla frontu (Twoje raffle.js tego używa)
         payload["ok"] = True
         payload["rerolls_left"] = state.rerolls_left
         payload["shuffles_left"] = state.shuffles_left
