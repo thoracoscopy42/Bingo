@@ -299,7 +299,7 @@
             ],
             {
               duration: CFG.FLIGHT_MS,
-              easing: "cubic-bezier(.2,.9,.2,1)",
+              easing: "linear",
               fill: "forwards",
             }
           );
