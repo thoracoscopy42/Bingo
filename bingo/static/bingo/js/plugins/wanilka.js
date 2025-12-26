@@ -12,13 +12,13 @@
   // ====== konfiguracja (tu sobie kręcisz gałkami) ======
   const CFG = {
     // czas lotu od lewej do punktu eksplozji (ms)
-    FLIGHT_MS: 20000,
+    FLIGHT_MS: 60000,
 
     // gdzie ma nastąpić eksplozja (0..1)
-    EXPLODE_AT_X: 0.85,
+    EXPLODE_AT_X: 0.80,
 
     // rozmiar samolotu (px)
-    PLANE_W: 200,
+    PLANE_W: 250,
 
     // intensywność wstrząsu
     SHAKE_MS: 1100,
@@ -27,7 +27,7 @@
     HOLE_EAT_MS: 5000,
 
     // po ilu ms od eksplozji podmienić stronę na kotki
-    SWITCH_TO_POSTAPO_MS: 600,
+    SWITCH_TO_POSTAPO_MS: 2500,
 
     // ile kafli GIF na ekranie (większa wartość = mniejsze kafle)
     POSTAPO_TILE: 250,

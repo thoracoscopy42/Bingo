@@ -48,13 +48,70 @@ def Drymastero103_func() -> UserPluginConfig:
         sfx={} # jak robisz dla piotrka to tutaj dodajesz dźwięki, ogółem images dodawaj przez js-a a nie w html-u bo nam sie zaśmieci game
     )
 
+def kyspro_func() -> UserPluginConfig:
+    return UserPluginConfig(
+        js_plugin="bingo/js/plugins/kyspro.js",
+        sfx={}
+    )
+
+def jull_func() -> UserPluginConfig:
+    return UserPluginConfig(
+        js_plugin="bingo/js/plugins/kyspro.js",
+        sfx={}
+    )
+
+def stugsiana_func() -> UserPluginConfig:
+    return UserPluginConfig(
+        js_plugin="bingo/js/plugins/kyspro.js",
+        sfx={}
+    )
+
+def nataliagl131_func() -> UserPluginConfig:
+    return UserPluginConfig(
+        js_plugin="bingo/js/plugins/kyspro.js",
+        sfx={}
+    )
+
+def Pesos_func() -> UserPluginConfig:
+    return UserPluginConfig(
+        js_plugin="bingo/js/plugins/kyspro.js",
+        sfx={}
+    )
+
+def SabrinaSitOnMe_func() -> UserPluginConfig:
+    return UserPluginConfig(
+        js_plugin="bingo/js/plugins/kyspro.js",
+        sfx={}
+    )
+
+def kamiqxx_func() -> UserPluginConfig:
+    return UserPluginConfig(
+        js_plugin="bingo/js/plugins/kyspro.js",
+        sfx={}
+    )
+
+def BigMan_func() -> UserPluginConfig:
+    return UserPluginConfig(
+        js_plugin="bingo/js/plugins/kyspro.js",
+        sfx={}
+    )
+
 
 
 USER_PLUGIN_REGISTRY = {
-    "oniksu": oniksu_func,
-    "wanilka": wanilka_func,
-    "Drymastero103": Drymastero103_func,
-    #
+                                                #0    
+    "oniksu": oniksu_func,                      # 1                        
+    "wanilka": wanilka_func,                    #  2   
+    "Drymastero103": Drymastero103_func,        #   3                   
+    "kyspro":kyspro_func,                       #    4  
+    "jull":jull_func,                           #     5   
+    "stugsiana":stugsiana_func,                 #      6    
+    "nataliagl131":nataliagl131_func,           #       7           
+    "Pesos":Pesos_func,                         #        8   
+    "SabrinaSitOnMe":SabrinaSitOnMe_func,       #         9            
+    "kamiqxx":kamiqxx_func,                     #         10
+    "BigMan": BigMan_func,                      #__________11
+
 }
 
 def get_user_plugin(username: str) -> Optional[UserPluginConfig]:

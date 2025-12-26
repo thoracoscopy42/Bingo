@@ -258,7 +258,11 @@
   const saveBtn = document.getElementById("save-btn");
   if (saveBtn) saveBtn.addEventListener("click", onSave);
     
+  //ładujemy juz sporo rzeczy wiec to takie failsave jakby sie plugin ładował dłużej niż sama strona, żeby na niego poczekała 
+  window.addEventListener("DOMContentLoaded", () => {
   window.BingoPluginRuntime?.initUserPlugin?.();
+  });
+
 
     
   
