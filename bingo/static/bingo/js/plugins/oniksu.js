@@ -195,7 +195,7 @@ function randomSidePos() {
     // twardy limiter: min 30s odstępu
     if (now() < nextAllowedAt) return;
     // limit: max 6 kafelków może być poza tabelą
-    if (floating.size >= CFG.maxFloating) return;
+    if (cloaked.size >= CFG.maxFloating) return;
 
     const tile = pickVictim();
     if (!tile) return;
