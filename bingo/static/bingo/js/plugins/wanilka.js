@@ -142,15 +142,16 @@
 
 .plugin-people{
   position: fixed;
-  width: 260px;           /* ustaw jak chcesz */
+  width: 260px;
   height: auto;
-  left: 72vw;             /* gdzie ma “stać” obiekt kolizji */
-  top: 100vh;             /* start spod podłogi */
-  transform: translate(-50%, 0);
+  left: 0;
+  top: 0;
+  transform: translate(-9999px, -9999px);
   will-change: transform, opacity;
   filter: drop-shadow(0 12px 22px rgba(0,0,0,.42));
   opacity: 1;
 }
+
 
         `;
         document.head.appendChild(style);
