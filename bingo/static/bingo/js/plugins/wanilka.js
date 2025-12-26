@@ -335,7 +335,7 @@
           const enter = people.animate(
             [
               { transform: "translateX(120%)" },
-              { transform: "translateX(0%)" },
+              { transform: "translateX(8%)" },
             ],
             { duration: ENTER_MS, easing: "linear", fill: "forwards" }
           );
