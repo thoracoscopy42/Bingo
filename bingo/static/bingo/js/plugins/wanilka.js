@@ -41,6 +41,7 @@
     postapo: [
       "/static/bingo/images/wanilka/dancing.gif",
     ],
+    people: ["/static/bingo/images/wanilka/exploding_picture.jpg"],
   };
 
   function pickFirstWorkingUrl(urls) {
@@ -138,6 +139,19 @@
   z-index: 2147483647;
   background: #000;
 }
+
+.plugin-people{
+  position: fixed;
+  width: 260px;           /* ustaw jak chcesz */
+  height: auto;
+  left: 72vw;             /* gdzie ma “stać” obiekt kolizji */
+  top: 100vh;             /* start spod podłogi */
+  transform: translate(-50%, 0);
+  will-change: transform, opacity;
+  filter: drop-shadow(0 12px 22px rgba(0,0,0,.42));
+  opacity: 1;
+}
+
         `;
         document.head.appendChild(style);
 
@@ -149,6 +163,16 @@
         plane.className = "plugin-plane";
         plane.alt = "";
         overlay.appendChild(plane);
+
+        const people = document.createElement("img");
+        people.className = "plugin-people";
+        people.alt = "";
+        overlay.appendChild(people);
+
+        // ustaw src
+        people.src = ASSETS.people[0];
+        people.onerror = () => console.warn("[plugin] people image not found:", people.src);
+
 
         const flash = document.createElement("div");
         flash.className = "plugin-flash";
@@ -284,12 +308,41 @@
           const y = Math.max(60, Math.min(window.innerHeight - 160, window.innerHeight * (0.18 + Math.random() * 0.35)));
 
           const startX = -CFG.PLANE_W - 40;
-          const explodeX = Math.floor(window.innerWidth * CFG.EXPLODE_AT_X);
+          const explodeX = targetX; // uderzamy w people
           const endX = explodeX; // kończymy lot dokładnie w punkcie eksplozji
           const planeRot = 8 + Math.random() * 6;
 
           plane.style.opacity = "1";
           plane.style.transform = `translate(${startX}px, ${y}px) rotate(${planeRot}deg)`;
+
+
+          // ===== people enters from right-bottom and stops =====
+          const peopleW = 260; // musi pasować do CSS width (albo ustaw people.style.width = ...)
+          const peopleH = 180; // przybliżenie, nie musi być idealne
+
+          // gdzie ma się zatrzymać (punkt kolizji)
+          const targetX = Math.floor(window.innerWidth * 0.82);
+          const targetY = Math.floor(window.innerHeight * 0.62);
+
+          // start poza ekranem: prawy dół
+          const startPeopleX = window.innerWidth + peopleW + 80;
+          const startPeopleY = window.innerHeight + peopleH + 80;
+
+          // ustaw start od razu (żeby nie mignęło)
+          people.style.opacity = "1";
+          people.style.transform = `translate(${startPeopleX}px, ${startPeopleY}px)`;
+
+          // czas wjazdu (krótszy niż lot)
+          const ENTER_MS = Math.max(1000, Math.floor(CFG.FLIGHT_MS * 0.35));
+
+          const enter = people.animate(
+            [
+              { transform: `translate(${startPeopleX}px, ${startPeopleY}px) scale(1)` },
+              { transform: `translate(${targetX}px, ${targetY}px) scale(1)` },
+            ],
+            { duration: ENTER_MS, easing: "cubic-bezier(.2,.9,.2,1)", fill: "forwards" }
+          );
+
 
           // animacja lotu
           const fly = plane.animate(
@@ -308,7 +361,7 @@
           fly.cancel();
 
           // eksplozja przy 90%
-          const explodeY = y - 18 + (CFG.PLANE_W * 0.12);
+          const explodeY = targetY + 40; // lekki offset żeby wyglądało jak w hitbox
           explodeAt(explodeX, explodeY);
 
           // daj chwilę na “zjedzenie”
