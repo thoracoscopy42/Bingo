@@ -15,22 +15,6 @@ class BingoBoard(models.Model):
         return f"BingoBoard({self.user.username})"
 
 
-
-class TwoFieldTab(models.Model):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="two_field_tab",
-    )
-    value = models.CharField(max_length=200, blank=True, default="")
-
-    def __str__(self):
-        return f"TwoFieldTab({self.user_id})"
-
-
-
-
-
 class RaffleState(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
