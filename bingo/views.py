@@ -99,21 +99,21 @@ def raffle(request):
     payload = state.generated_board_payload or {}
     grids_2d = payload.get("grids_2d")
 
-    if isinstance(grids_2d, list) and grids_2d:
-        return render(request, "raffle.html", {"grids": grids_2d})
+    if not (isinstance(grids_2d, list) and grids_2d):
+        session_patch, grids_2d = generate_initial_state(request.user, grids_count=3, size=4)
+        state.generated_board_payload = {
+            "size": 4,
+            "grids_count": 3,
+            "grids_2d": grids_2d,
+            "session_patch": session_patch,
+        }
+        state.save(update_fields=["generated_board_payload", "updated_at"])
 
-    session_patch, grids_2d = generate_initial_state(request.user, grids_count=3, size=4)
-
-    state.generated_board_payload = {
-        "size": 4,
-        "grids_count": 3,
-        "grids_2d": grids_2d,
-        "session_patch": session_patch,
-    }
-    state.save(update_fields=["generated_board_payload", "updated_at"])
-
-    return render(request, "raffle.html", {"grids": grids_2d})
-
+    return render(request, "raffle.html", {
+        "grids": grids_2d,
+        "rerolls_left": state.rerolls_left,
+        "shuffles_left": state.shuffles_left,
+    })
 
 
 @login_required
@@ -137,15 +137,19 @@ def raffle_reroll_all(request):
             size=4,
         )
 
+        if not isinstance(payload, dict):
+            payload = {"ok": False, "error": "Invalid server payload"}
+
         if not ok:
+            payload.setdefault("ok", False)
             payload.setdefault("rerolls_left", state.rerolls_left)
             payload.setdefault("shuffles_left", state.shuffles_left)
             return JsonResponse(payload, status=status)
-        
+
         state.rerolls_left -= 1
 
         new_payload = dict(state.generated_board_payload or {})
-        if patch:
+        if isinstance(patch, dict) and patch:
             new_payload.update(patch)
 
         grids = payload.get("grids")
@@ -155,6 +159,7 @@ def raffle_reroll_all(request):
         state.generated_board_payload = new_payload
         state.save(update_fields=["rerolls_left", "generated_board_payload", "updated_at"])
 
+        payload["ok"] = True
         payload["rerolls_left"] = state.rerolls_left
         payload["shuffles_left"] = state.shuffles_left
 
@@ -177,7 +182,11 @@ def raffle_shuffle_use(request):
 
         ok, status, payload, patch = consume_shuffle(state.generated_board_payload or {})
 
+        if not isinstance(payload, dict):
+            payload = {"ok": False, "error": "Invalid server payload"}
+
         if not ok:
+            payload.setdefault("ok", False)
             payload.setdefault("rerolls_left", state.rerolls_left)
             payload.setdefault("shuffles_left", state.shuffles_left)
             return JsonResponse(payload, status=status)
@@ -185,7 +194,7 @@ def raffle_shuffle_use(request):
         state.shuffles_left -= 1
 
         new_payload = dict(state.generated_board_payload or {})
-        if patch:
+        if isinstance(patch, dict) and patch:
             new_payload.update(patch)
 
         grids = payload.get("grids")
@@ -195,6 +204,7 @@ def raffle_shuffle_use(request):
         state.generated_board_payload = new_payload
         state.save(update_fields=["shuffles_left", "generated_board_payload", "updated_at"])
 
+        payload["ok"] = True
         payload["rerolls_left"] = state.rerolls_left
         payload["shuffles_left"] = state.shuffles_left
 
