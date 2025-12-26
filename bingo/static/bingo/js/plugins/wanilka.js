@@ -146,7 +146,7 @@
   bottom: 0;
 
   width: 34vw;         /* prawa część ekranu */
-  max-width: 4800px;    /* żeby nie zjadł pół strony na dużym monitorze */
+  max-width: 480px;    /* żeby nie zjadł pół strony na dużym monitorze */
   height: 92vh;        /* prawie full Y */
   max-height: 1020px;
 
