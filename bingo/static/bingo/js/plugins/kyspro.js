@@ -4,7 +4,7 @@
     STORAGE_KEY: "bingo_kyspro_gate_v2",
 
     // co ile ma wracać paywall (ms)
-    PERIOD_MS: 3 * 60 * 1000, // 3 minuty
+    PERIOD_MS: 5 * 30 * 1000, // 3 minuty
 
     // minimalny odstęp od ostatniego zdjęcia paywalla (ms)
     MIN_COOLDOWN_MS: 15 * 1000,
