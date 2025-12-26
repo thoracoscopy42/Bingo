@@ -12,7 +12,7 @@ class UserPluginConfig:
     sfx: Dict[str, List[str]]
 
 #
-def testinguser1_func() -> UserPluginConfig:
+def oniksu_func() -> UserPluginConfig:
     return UserPluginConfig(
         js_plugin="bingo/js/plugins/testinguser1.js",
         sfx={
@@ -29,7 +29,7 @@ def testinguser1_func() -> UserPluginConfig:
 
 
 USER_PLUGIN_REGISTRY = {
-    "testinguser1": testinguser1_func,
+    "oniksu": oniksu_func,
     #
 }
 
