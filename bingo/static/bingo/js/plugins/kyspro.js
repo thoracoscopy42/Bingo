@@ -327,7 +327,7 @@
           const since = now() - last;
 
           // jeśli nigdy nie przeszedł -> od razu pokaż
-          if (!last) return false;
+          if (!last) return true;
 
           // cooldown
           if (since < CFG.MIN_COOLDOWN_MS) return false;

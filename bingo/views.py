@@ -11,9 +11,10 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth import get_user_model
 from django.views.decorators.http import require_POST
 from django.urls import reverse
+from django.db import transaction
 
 from .user_plugins import get_user_plugin
-from .models import BingoBoard
+from .models import BingoBoard,RaffleState
 from .raffle_algorithm import generate_initial_state,reroll_one_grid,consume_shuffle
 
 
@@ -93,11 +94,23 @@ def save_board(request):
     return JsonResponse({"ok": True})
 @login_required
 def raffle(request):
+    state, _ = RaffleState.objects.get_or_create(user=request.user)
+
+    payload = state.generated_board_payload or {}
+    grids_2d = payload.get("grids_2d")
+
+    if isinstance(grids_2d, list) and grids_2d:
+        return render(request, "raffle.html", {"grids": grids_2d})
+
     session_patch, grids_2d = generate_initial_state(request.user, grids_count=3, size=4)
 
-    for k, v in session_patch.items():
-        request.session[k] = v
-    request.session.modified = True
+    state.generated_board_payload = {
+        "size": 4,
+        "grids_count": 3,
+        "grids_2d": grids_2d,
+        "session_patch": session_patch,
+    }
+    state.save(update_fields=["generated_board_payload", "updated_at"])
 
     return render(request, "raffle.html", {"grids": grids_2d})
 
@@ -106,29 +119,83 @@ def raffle(request):
 @login_required
 @require_POST
 def raffle_reroll_all(request):
-    ok, status, payload, session_patch = reroll_one_grid(
-        current_user=request.user,
-        session_data=dict(request.session),
-        post_data=request.POST,
-        size=4,
-    )
+    with transaction.atomic():
+        state, _ = RaffleState.objects.select_for_update().get_or_create(user=request.user)
 
-    if session_patch:
-        for k, v in session_patch.items():
-            request.session[k] = v
-        request.session.modified = True
+        if state.rerolls_left <= 0:
+            return JsonResponse({
+                "ok": False,
+                "error": "Chcialoby sie wiecej co ?",
+                "rerolls_left": 0,
+                "shuffles_left": state.shuffles_left,
+            }, status=429)
 
-    return JsonResponse(payload, status=status)
+        ok, status, payload, patch = reroll_one_grid(
+            current_user=request.user,
+            session_data=state.generated_board_payload or {},
+            post_data=request.POST,
+            size=4,
+        )
+
+        if not ok:
+            payload.setdefault("rerolls_left", state.rerolls_left)
+            payload.setdefault("shuffles_left", state.shuffles_left)
+            return JsonResponse(payload, status=status)
+        
+        state.rerolls_left -= 1
+
+        new_payload = dict(state.generated_board_payload or {})
+        if patch:
+            new_payload.update(patch)
+
+        grids = payload.get("grids")
+        if isinstance(grids, list) and grids:
+            new_payload["grids_2d"] = grids
+
+        state.generated_board_payload = new_payload
+        state.save(update_fields=["rerolls_left", "generated_board_payload", "updated_at"])
+
+        payload["rerolls_left"] = state.rerolls_left
+        payload["shuffles_left"] = state.shuffles_left
+
+        return JsonResponse(payload, status=status)
 
 
 @login_required
 @require_POST
 def raffle_shuffle_use(request):
-    ok, status, payload, session_patch = consume_shuffle(dict(request.session))
+    with transaction.atomic():
+        state, _ = RaffleState.objects.select_for_update().get_or_create(user=request.user)
 
-    if session_patch:
-        for k, v in session_patch.items():
-            request.session[k] = v
-        request.session.modified = True
+        if state.shuffles_left <= 0:
+            return JsonResponse({
+                "ok": False,
+                "error": "No more shuffles for u baby",
+                "rerolls_left": state.rerolls_left,
+                "shuffles_left": 0,
+            }, status=429)
 
-    return JsonResponse(payload, status=status)
+        ok, status, payload, patch = consume_shuffle(state.generated_board_payload or {})
+
+        if not ok:
+            payload.setdefault("rerolls_left", state.rerolls_left)
+            payload.setdefault("shuffles_left", state.shuffles_left)
+            return JsonResponse(payload, status=status)
+
+        state.shuffles_left -= 1
+
+        new_payload = dict(state.generated_board_payload or {})
+        if patch:
+            new_payload.update(patch)
+
+        grids = payload.get("grids")
+        if isinstance(grids, list) and grids:
+            new_payload["grids_2d"] = grids
+
+        state.generated_board_payload = new_payload
+        state.save(update_fields=["shuffles_left", "generated_board_payload", "updated_at"])
+
+        payload["rerolls_left"] = state.rerolls_left
+        payload["shuffles_left"] = state.shuffles_left
+
+        return JsonResponse(payload, status=status)
