@@ -15,22 +15,22 @@
     FLIGHT_MS: 20000,
 
     // gdzie ma nastąpić eksplozja (0..1)
-    EXPLODE_AT_X: 0.90,
+    EXPLODE_AT_X: 0.85,
 
     // rozmiar samolotu (px)
     PLANE_W: 200,
 
     // intensywność wstrząsu
-    SHAKE_MS: 650,
+    SHAKE_MS: 900,
 
     // czarna dziura: ile trwa wciąganie (ms)
-    HOLE_EAT_MS: 1000,
+    HOLE_EAT_MS: 3000,
 
     // po ilu ms od eksplozji podmienić stronę na kotki
-    SWITCH_TO_POSTAPO_MS: 300,
+    SWITCH_TO_POSTAPO_MS: 700,
 
     // ile kafli GIF na ekranie (większa wartość = mniejsze kafle)
-    POSTAPO_TILE: 200,
+    POSTAPO_TILE: 250,
   };
 
   // ====== assety 
