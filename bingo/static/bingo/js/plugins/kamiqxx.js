@@ -15,7 +15,7 @@
 
     
     SFX_KEY: "ambient",
-    BG_VOL: 0.35,          
+    BG_VOL: 0.15,          
     BG_FADE_MS: 700,       
     BG_SHUFFLE: true,      
 
