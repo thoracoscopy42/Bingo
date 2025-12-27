@@ -84,11 +84,12 @@
 {% block scripts %}
   <script defer src="{% static 'bingo/js/plugin_runtime.js' %}"></script>
   <script defer src="{% static 'bingo/js/game.js' %}"></script>
+  
 
   {% if plugin_path %}
 
     <script defer src="{% static plugin_path %}"></script>
   {% endif %}
-
+  <script src="{% static 'bingo/js/transition.js' %}"></script>
 {% endblock %}
 
