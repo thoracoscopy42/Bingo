@@ -1,5 +1,4 @@
 (() => {
-  // ===== Helpers (w stylu game.js) =====
   function getJSONScript(id, fallback = null) {
     const el = document.getElementById(id);
     if (!el) return fallback;
@@ -16,7 +15,6 @@
     return "";
   }
 
-  // Fisher–Yates
   function shuffleArray(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -26,29 +24,26 @@
     return a;
   }
 
-  function playAudioById(id) {
-    const audio = document.getElementById(id);
-    if (!audio) return false;
-    try {
-      audio.currentTime = 0;
-      const p = audio.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
   function toInt(x, fallback = 0) {
     const n = Number(x);
     return Number.isFinite(n) ? n : fallback;
   }
 
-  // ===== Główna logika =====
+  function playAudioById(id) {
+    const audio = document.getElementById(id);
+    if (!audio) return { ok: false, audio: null };
+    try {
+      audio.currentTime = 0;
+      const p = audio.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+      return { ok: true, audio };
+    } catch {
+      return { ok: false, audio };
+    }
+  }
+
   function initRafflePlugin() {
     const cfg = getJSONScript("raffle-config", null);
     if (!cfg) {
@@ -74,47 +69,22 @@
     const badgeShuffle = document.getElementById("badgeShuffle");
 
     const audioRerollId = (cfg.audio && cfg.audio.rerollId) || "rerollSound";
-    const rerollAudio = document.getElementById(audioRerollId);
+
+    // === CAT overlay (JEDEN na całe stage) ===
+    const catGifWrap = document.getElementById("catGifWrap");
+
+    function showCatGif() { if (catGifWrap) catGifWrap.hidden = false; }
+    function hideCatGif() { if (catGifWrap) catGifWrap.hidden = true; }
+
+    // startowo: NIEWIDOCZNY
+    hideCatGif();
 
     let active = 0;
-
-    // === CAT overlay: bierz z aktywnego boarda (.catGifWrap wewnątrz .raffle-grid) ===
-    function getActiveCatWrap() {
-      const board = boards[active];
-      return board ? board.querySelector(".catGifWrap") : null;
-    }
-
-    function showCatGif() {
-      const el = getActiveCatWrap();
-      if (el) el.hidden = false;
-    }
-
-    function hideCatGif() {
-      const el = getActiveCatWrap();
-      if (el) el.hidden = true;
-    }
-
-    // chowaj kota po końcu dźwięku (zawsze dla aktualnie aktywnego boarda)
-    if (rerollAudio) {
-      rerollAudio.addEventListener("ended", () => {
-        hideCatGif();
-      });
-    }
-
-    // ukryj wszystkie koty na starcie (żeby na 100% nic nie mrugnęło)
-    function hideAllCats() {
-      document.querySelectorAll(".catGifWrap").forEach(el => { el.hidden = true; });
-    }
 
     function applyClasses() {
       if (!boards.length) return;
       boards.forEach((b, i) => {
-        b.classList.remove(
-          "raffle-board--active",
-          "raffle-board--prev",
-          "raffle-board--next",
-          "raffle-board--hidden"
-        );
+        b.classList.remove("raffle-board--active", "raffle-board--prev", "raffle-board--next", "raffle-board--hidden");
         if (i === active) b.classList.add("raffle-board--active");
         else if (i === (active + boards.length - 1) % boards.length) b.classList.add("raffle-board--prev");
         else if (i === (active + 1) % boards.length) b.classList.add("raffle-board--next");
@@ -122,7 +92,6 @@
       });
     }
 
-    // START: wczytaj left z badge (czyli z DB przez template)
     let rerollsLeft = toInt(badgeReroll?.textContent, 0);
     let shufflesLeft = toInt(badgeShuffle?.textContent, 0);
 
@@ -153,20 +122,15 @@
       if (!boards.length) return;
       active = (n + boards.length) % boards.length;
       applyClasses();
-      // zmiana aktywnego boarda: niech kot nie zostaje na innym
-      hideAllCats();
     }
 
-    // NAV
     if (left) left.addEventListener("click", () => show(active - 1));
     if (right) right.addEventListener("click", () => show(active + 1));
 
-    // INIT
     applyClasses();
     updateBadges();
-    hideAllCats();
 
-    // ===== SHUFFLE (backend limit + animacja) =====
+    // ===== SHUFFLE =====
     if (btnShuffle) {
       btnShuffle.addEventListener("click", async () => {
         if (btnShuffle.disabled) return;
@@ -178,7 +142,6 @@
 
         if (!gridEl || tiles.length !== targetTiles) return;
 
-        // UI lock
         btnShuffle.disabled = true;
 
         try {
@@ -204,7 +167,6 @@
 
           gridEl.classList.add("is-shuffling");
 
-          // Faza 1: do środka
           const toCenterAnims = tiles.map((tile, i) => {
             const r = first[i];
             const tx = cx - (r.left + r.width / 2);
@@ -220,16 +182,14 @@
 
           await Promise.allSettled(toCenterAnims.map(a => a.finished));
 
-          // Faza 2: przetasuj teksty
           const texts = textsEls.map(t => t.textContent);
           const shuffledTexts = shuffleArray(texts);
           textsEls.forEach((t, i) => { t.textContent = shuffledTexts[i]; });
 
           toCenterAnims.forEach(a => a.cancel());
 
-          // Faza 3: z centrum na pola
           const last = tiles.map(t => t.getBoundingClientRect());
-          const fromCenterToCellAnims = tiles.map((tile, i) => {
+          const backAnims = tiles.map((tile, i) => {
             const r = last[i];
             const tx = cx - (r.left + r.width / 2);
             const ty = cy - (r.top + r.height / 2);
@@ -242,8 +202,8 @@
             );
           });
 
-          await Promise.allSettled(fromCenterToCellAnims.map(a => a.finished));
-          fromCenterToCellAnims.forEach(a => a.cancel());
+          await Promise.allSettled(backAnims.map(a => a.finished));
+          backAnims.forEach(a => a.cancel());
           gridEl.classList.remove("is-shuffling");
 
         } catch (e) {
@@ -255,17 +215,20 @@
       });
     }
 
-    // ===== REROLL (backend + podmiana tekstów + CAT overlay) =====
+    // ===== REROLL =====
     if (btnReroll) {
       btnReroll.addEventListener("click", async () => {
         if (btnReroll.disabled) return;
 
-        // zawsze schowaj wszystkie i pokaż tylko na aktywnym
-        hideAllCats();
+        // pokaż kota i odpal audio
         showCatGif();
+        const { audio } = playAudioById(audioRerollId);
 
-        // odpal dźwięk (kot znika dopiero na 'ended')
-        playAudioById(audioRerollId);
+        // kot ma znikać DOPIERO jak dźwięk skończy grać:
+        // więc podpinamy ended tu (i zdejmujemy poprzedni listener, żeby nie dublować)
+        if (audio) {
+          audio.onended = () => hideCatGif();
+        }
 
         const board = boards[active];
         const gridEl = board ? board.querySelector(".raffle-grid") : null;
@@ -284,12 +247,13 @@
           });
 
           const data = await res.json();
+          // debug (na chwilę) - zobaczysz czy backend zwraca cells
+          console.log("[reroll] response:", data);
 
           if (!data.ok) {
             showToast?.(data.error || "Reroll blocked", "error", 2200);
             applyLeftFromResponse(data);
-            // na błędzie schowaj (żeby nie wisiało)
-            hideAllCats();
+            hideCatGif(); // na błędzie chowamy, bo dźwięk może nie iść
             return;
           }
 
@@ -297,30 +261,32 @@
 
           const tiles = Array.from(board.querySelectorAll(".raffle-text"));
 
-          await sleep(1367); // pod timing dźwięku/animacji
+          await sleep(1367);
 
           if (Array.isArray(data.cells)) {
             data.cells.forEach((txt, i) => {
               if (tiles[i]) tiles[i].textContent = txt;
             });
+          } else {
+            console.warn("[reroll] missing data.cells");
           }
 
         } catch (e) {
           console.error(e);
           showToast?.("Błąd reroll (network)", "error", 2200);
-          hideAllCats();
+          hideCatGif();
         } finally {
           setTimeout(() => {
             if (gridEl) gridEl.classList.remove("is-rerolling");
           }, 260);
 
           updateBadges();
-          // UWAGA: nie chowamy kota tutaj — tylko po 'ended'
+          // UWAGA: NIE chowamy kota tutaj. Tylko ended (albo error).
         }
       });
     }
 
-    // ===== WYBIERAM CIEBIE: JSON aktualnego grida z DOM =====
+    // ===== PICK =====
     if (btnPick) {
       btnPick.addEventListener("click", () => {
         const board = boards[active];

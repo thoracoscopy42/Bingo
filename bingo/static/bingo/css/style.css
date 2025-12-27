@@ -858,11 +858,16 @@ body::after{
   position: relative;
 }
 
-/* overlay kota – domyślnie hidden, więc NIE zajmuje miejsca */
-.raffle-gif-wrap{
+/* stage musi być referencją dla overlay */
+.raffle-stage{
+  position: relative;
+}
+
+/* overlay kota nad CAŁĄ planszą */
+.raffle-cat-overlay{
   position: absolute;
   inset: 0;
-  z-index: 60;
+  z-index: 9999;
 
   display: grid;
   place-items: center;
@@ -870,21 +875,19 @@ body::after{
   background: rgba(0,0,0,.35);
   backdrop-filter: blur(2px);
 
-  /* jeśli chcesz, żeby overlay NIE blokował klików w grid (opcjonalnie) */
+  /* overlay nie musi blokować klików - ale i tak masz disabled button */
   pointer-events: none;
 }
 
-/* hidden = totalnie niewidoczny (zero miejsca) */
-.raffle-gif-wrap[hidden]{
+/* hidden = totalnie niewidoczny */
+.raffle-cat-overlay[hidden]{
   display: none !important;
 }
 
-/* sam gif */
 .raffle-gif{
-  width: min(340px, 72%);
+  width: min(360px, 72%);
   height: auto;
   border-radius: 16px;
-
-  box-shadow: 0 18px 55px rgba(0,0,0,.55);
   border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 18px 55px rgba(0,0,0,.55);
 }
