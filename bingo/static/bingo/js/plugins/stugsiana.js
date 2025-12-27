@@ -16,8 +16,8 @@
 
     // ===== NOWE: bouncing logo =====
     BOUNCE_LOGO_SRC: "/static/bingo/images/stugsiana/wzwod.jpg",
-    BOUNCE_LOGO_SIZE: 92, // px
-    BOUNCE_LOGO_OPACITY: 0.22,
+    BOUNCE_LOGO_SIZE: 167, // px
+    BOUNCE_LOGO_OPACITY: 0.50,
     BOUNCE_LOGO_MAX: 5, // limit, żeby nie zabić przeglądarki
 
     // popup na każdym wejściu
