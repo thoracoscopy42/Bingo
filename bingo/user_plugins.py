@@ -120,6 +120,7 @@ def kamiqxx_func() -> UserPluginConfig:
                 static("bingo/sfx/kamiqxx/outoftouch.mp3"),
                 static("bingo/sfx/kamiqxx/robbers.mp3"),
                 static("bingo/sfx/kamiqxx/sitnexttome.mp3"),
+                static("bingo/sfx/kamiqxx/stargazing.mp3"),
                 static("bingo/sfx/kamiqxx/stevienicks.mp3"),
             ]
         }
