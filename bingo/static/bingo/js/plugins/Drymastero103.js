@@ -1,7 +1,5 @@
 (() => {
   const CFG = {
-    STORAGE_KEY: "bingo_drymastero103_egg_gate_v1",
-
     // grafiki
     IMG_LEFT:  "/static/bingo/images/Drymastero103/dziecko.jpg",
     IMG_RIGHT: "/static/bingo/images/Drymastero103/mlotek.jpg",
@@ -17,25 +15,14 @@
     GAP_PX: 14,
     EGG_W: 367,
     EGG_H: 367,
+
+    HIDE_AFTER_MS: 5000,
   };
 
   function clamp01(x) {
     const n = Number(x);
     if (!isFinite(n)) return 1;
     return Math.max(0, Math.min(1, n));
-  }
-
-  function loadState() {
-    try {
-      const raw = localStorage.getItem(CFG.STORAGE_KEY);
-      return raw ? JSON.parse(raw) : { rightClicked: false, unlocked: false };
-    } catch {
-      return { rightClicked: false, unlocked: false };
-    }
-  }
-
-  function saveState(st) {
-    try { localStorage.setItem(CFG.STORAGE_KEY, JSON.stringify(st)); } catch {}
   }
 
   function whenRuntime(fn) {
@@ -76,29 +63,30 @@
   }
 
   function lockCenter4(locked) {
-  const center = getCenter4Textareas();
+    const center = getCenter4Textareas();
 
-  center.forEach((ta) => {
-    const wrap = ta.closest(".cell-wrapper");
-    if (!wrap) return;
+    center.forEach((ta) => {
+      const wrap = ta.closest(".cell-wrapper");
+      if (!wrap) return;
 
-    if (locked) {
-      ta.disabled = true;
-      wrap.classList.add("dry-hidden");
-    } else {
-      ta.disabled = false;
-      wrap.classList.remove("dry-hidden");
-      ta.classList.remove("dry-locked");
-      wrap.classList.remove("dry-locked");
-    }
-  });
-}
+      if (locked) {
+        ta.disabled = true;
+        wrap.classList.add("dry-hidden");
+      } else {
+        ta.disabled = false;
+        wrap.classList.remove("dry-hidden");
+        ta.classList.remove("dry-locked");
+        wrap.classList.remove("dry-locked");
+      }
+    });
+  }
 
   whenRuntime(() => {
     window.BingoUserPlugin = {
       init(api) {
         const { ctx, sfx } = api;
-        const root = document.getElementById("plugin-root");
+
+        // overlay na body żeby nic nie przykrywało klików
         const overlay = document.createElement("div");
         overlay.style.position = "fixed";
         overlay.style.left = "0";
@@ -108,38 +96,40 @@
         overlay.style.zIndex = "2147483647";
         overlay.style.pointerEvents = "none"; // overlay nie blokuje strony
         document.body.appendChild(overlay);
-        if (!root) return;
 
-        // bierz audio z user_plugins.py jeśli jest
+        // audio z user_plugins.py jeśli jest
         const bgUrl  = (sfx?.gag && sfx.gag[0]) ? sfx.gag[0] : CFG.BG_LOOP_URL;
         const sfxUrl = (sfx?.tung && sfx.tung[0]) ? sfx.tung[0] : CFG.SFX_UNLOCK_URL;
 
         const style = document.createElement("style");
         style.textContent = `
-#plugin-root { position: relative; z-index: 2147483000; }
-
 .dry-egg {
   position: fixed;
   width: ${CFG.EGG_W}px;
   height: ${CFG.EGG_H}px;
-  z-index: 2147483645;
+  z-index: 2147483647;
   user-select: none;
   cursor: pointer;
   filter: drop-shadow(0 10px 24px rgba(0,0,0,.35));
+  pointer-events: auto; /* klikalne mimo overlay pointer-events:none */
 }
-.dry-egg[aria-disabled="true"] { cursor: not-allowed; opacity: .6; }
 
-textarea.grid-cell.dry-locked,
-.cell-wrapper.dry-locked textarea.grid-cell {
-  opacity: .55;
-  filter: grayscale(1);
+.dry-egg.dry-disabled {
+  pointer-events: none;
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.cell-wrapper.dry-hidden {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .dry-msg {
   position: fixed;
-  z-index: 2147483646;
+  z-index: 2147483647;
   padding: 10px 14px;
-  max-width: 320px;
+  max-width: 360px;
   border-radius: 12px;
   background: rgba(0,0,0,.72);
   color: #fff;
@@ -178,6 +168,7 @@ textarea.grid-cell.dry-locked,
           startBgLoop();
         }
 
+        // odblokuj audio na 1. interakcję
         ctx.on(document, "pointerdown", unlockAudioOnce, { once: true, capture: true });
         ctx.on(document, "keydown", unlockAudioOnce, { once: true, capture: true });
 
@@ -189,13 +180,15 @@ textarea.grid-cell.dry-locked,
           a.play().catch(() => {});
         }
 
-        // ===== state =====
-        const st = loadState();
-        if (!st.unlocked) lockCenter4(true);
+        // ===== state: zawsze od zera (za każdym wejściem) =====
+        const st = { rightClicked: false, unlocked: false };
+
+        // startowo: środek niewidoczny
+        lockCenter4(true);
 
         // ===== UI eggs =====
         const eggLeft = document.createElement("img");
-        eggLeft.className = "dry-egg";
+        eggLeft.className = "dry-egg dry-disabled"; // na start zablokowany
         eggLeft.src = CFG.IMG_LEFT;
         eggLeft.alt = "egg-left";
         eggLeft.draggable = false;
@@ -222,7 +215,7 @@ textarea.grid-cell.dry-locked,
         function positionMsg() {
           if (!msgEl) return;
           const r = eggLeft.getBoundingClientRect();
-          msgEl.style.left = `${Math.min(window.innerWidth - 340, r.left)}px`;
+          msgEl.style.left = `${Math.min(window.innerWidth - 380, Math.max(8, r.left))}px`;
           msgEl.style.top  = `${Math.max(8, r.top + CFG.EGG_H + 10)}px`;
         }
 
@@ -239,20 +232,18 @@ textarea.grid-cell.dry-locked,
         }
 
         function setLeftEnabled(enabled) {
-          eggLeft.setAttribute("aria-disabled", enabled ? "false" : "true");
+          eggLeft.classList.toggle("dry-disabled", !enabled);
         }
 
-        if (!st.unlocked) {
-          if (!st.rightClicked) overlay.appendChild(eggRight);
-          overlay.appendChild(eggLeft);
+        // pokaż oba obrazki zawsze na wejściu
+        overlay.appendChild(eggRight);
+        overlay.appendChild(eggLeft);
+        positionEggs();
 
-          positionEggs();
-          ctx.on(window, "resize", positionEggs);
-          ctx.on(window, "scroll", positionEggs, { passive: true });
+        ctx.on(window, "resize", positionEggs);
+        ctx.on(window, "scroll", positionEggs, { passive: true });
 
-          setLeftEnabled(!!st.rightClicked);
-        }
-
+        // ===== kolejność: right -> left -> unlock =====
         function onRightClick(e) {
           e.preventDefault();
           e.stopPropagation();
@@ -260,8 +251,8 @@ textarea.grid-cell.dry-locked,
           unlockAudioOnce();
 
           st.rightClicked = true;
-          saveState(st);
 
+          // znika prawy + odblokuj lewy
           try { eggRight.remove(); } catch {}
           setLeftEnabled(true);
         }
@@ -276,9 +267,10 @@ textarea.grid-cell.dry-locked,
           if (st.unlocked) return;
 
           st.unlocked = true;
-          saveState(st);
 
+          // lewy staje się 3. obrazkiem
           eggLeft.src = CFG.IMG_THIRD;
+
           playOneShot();
           lockCenter4(false);
 
@@ -290,7 +282,7 @@ textarea.grid-cell.dry-locked,
             try { if (msgEl) msgEl.remove(); } catch {}
             msgEl = null;
             msgTimer = null;
-          }, 5000);
+          }, CFG.HIDE_AFTER_MS);
         }
 
         ctx.on(eggRight, "click", onRightClick);
