@@ -1,31 +1,51 @@
 (() => {
   // === CONFIG ===
   const CFG = {
-    // mp3 które ma zagrać podczas fade-out
     SFX_SRC: "/static/bingo/sfx/intoraffle.mp3",
-
-    // ile trwa fade do czerni (ms)
     FADE_MS: 12670,
 
-    // na ile ms pokazać obrazek na "dropie"
     DROP_IMG_MS: 3000,
-
-    // obrazek który ma wyskoczyć na dropie
     DROP_IMG_SRC: "/static/bingo/images/absolutne.jpg",
+    DROP_AT_MS: 1000 * 15,
 
-    // kiedy pokazać obrazek względem startu muzyki (ms)
-    // (np. 1500 = po 1.5s od kliknięcia)
-    DROP_AT_MS: 1000*15,
-
-    // docelowa głośność sfx
     SFX_VOL: 0.15,
-
-    // jeśli audio nie ruszy (autoplay / błąd) → i tak przechodzimy po tym czasie
     FALLBACK_NAV_MS: 25000,
   };
 
   // tylko na /game/
   if (!String(location.pathname || "").includes("game")) return;
+
+  // --- GLOBAL MUTE ---
+  function hardMuteAllMedia() {
+    // 1) wycisz wszystko co już istnieje
+    document.querySelectorAll("audio, video").forEach((m) => {
+      try {
+        if (m.dataset.prevVolume == null) m.dataset.prevVolume = String(m.volume ?? 1);
+        m.muted = true;
+        m.volume = 0;
+        m.pause?.(); // jeśli nie chcesz pause, usuń tę linię
+      } catch {}
+    });
+
+    // 2) patch na przyszłe "new Audio()" (i każde .play())
+    if (!window.__mutePatchInstalled) {
+      window.__mutePatchInstalled = true;
+
+      const origPlay = HTMLMediaElement.prototype.play;
+      HTMLMediaElement.prototype.play = function () {
+        try {
+          // WYJĄTEK: jeśli element ma allowSound=1, nie wyciszamy go
+          if (this?.dataset?.allowSound === "1") {
+            // nic
+          } else {
+            this.muted = true;
+            this.volume = 0;
+          }
+        } catch {}
+        return origPlay.apply(this, arguments);
+      };
+    }
+  }
 
   function ensureOverlay() {
     let ov = document.getElementById("transition-ov");
@@ -35,7 +55,7 @@
     ov.id = "transition-ov";
     ov.style.position = "fixed";
     ov.style.inset = "0";
-    ov.style.background = "rgba(0,0,0,0)";
+    ov.style.background = "black";
     ov.style.opacity = "0";
     ov.style.pointerEvents = "none";
     ov.style.zIndex = "2147483644";
@@ -69,10 +89,8 @@
   function fadeOutEverything() {
     const ov = ensureOverlay();
     ov.style.pointerEvents = "auto";
-    // czarne tło z fade
     requestAnimationFrame(() => {
       ov.style.opacity = "1";
-      ov.style.background = "black";
     });
   }
 
@@ -89,74 +107,79 @@
   async function playSfx() {
     const a = new Audio(CFG.SFX_SRC);
     a.preload = "auto";
+
+    // !!! WAŻNE: oznaczamy jako "wyjątek" od global mute patcha
+    a.dataset.allowSound = "1";
+    a.muted = false;
+
     a.volume = Math.max(0, Math.min(1, Number(CFG.SFX_VOL) || 1));
 
-    // ważne: to jest wywoływane po kliknięciu usera, więc powinno przejść autoplay
-    await a.play();
+    await a.play(); // wywołane po kliknięciu, więc autoplay powinno przejść
     return a;
   }
 
   function findRaffleLink(el) {
-    // klik mógł być w środku (span itp.)
     const a = el?.closest?.("a.btn.btn--secondary");
     if (!a) return null;
-
     const href = a.getAttribute("href") || "";
-    // celujemy w /raffle/ lub url z nazwy
     if (!href.includes("raffle")) return null;
     return a;
   }
 
   let locked = false;
 
-  document.addEventListener("click", async (e) => {
-    const a = findRaffleLink(e.target);
-    if (!a) return;
+  document.addEventListener(
+    "click",
+    async (e) => {
+      const a = findRaffleLink(e.target);
+      if (!a) return;
 
-    // blokuj podwójne kliknięcia
-    if (locked) {
+      if (locked) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      locked = true;
+
       e.preventDefault();
       e.stopPropagation();
-      return;
-    }
-    locked = true;
 
-    // zatrzymaj natychmiastową nawigację
-    e.preventDefault();
-    e.stopPropagation();
+      const targetHref = a.href;
 
-    const targetHref = a.href;
+      // 1) NAJPIERW wycisz wszystko inne
+      hardMuteAllMedia();
 
-    // fade do czerni
-    fadeOutEverything();
+      // 2) fade do czerni
+      fadeOutEverything();
 
-    // odpal muzykę + ustaw fallback nawigacji
-    let navDone = false;
-    const fallbackTimer = setTimeout(() => {
-      if (navDone) return;
-      navDone = true;
-      location.href = targetHref;
-    }, CFG.FALLBACK_NAV_MS);
-
-    try {
-      const audio = await playSfx();
-
-      // drop obrazka w określonym momencie
-      setTimeout(() => {
-        // jak już nawigujemy, nie ma sensu
-        if (navDone) return;
-        showDrop();
-      }, CFG.DROP_AT_MS);
-
-      // kiedy audio dobiegnie końca → przejście
-      audio.addEventListener("ended", () => {
+      // 3) fallback na wypadek jak audio nie ruszy / nie ma ended
+      let navDone = false;
+      const fallbackTimer = setTimeout(() => {
         if (navDone) return;
         navDone = true;
-        clearTimeout(fallbackTimer);
         location.href = targetHref;
-      });
-    } catch {
-      // jeśli audio nie ruszy, fallback zrobi przejście
-    }
-  }, true);
+      }, CFG.FALLBACK_NAV_MS);
+
+      try {
+        const audio = await playSfx();
+
+        // drop obrazka w określonym momencie
+        setTimeout(() => {
+          if (navDone) return;
+          showDrop();
+        }, CFG.DROP_AT_MS);
+
+        // przejście po zakończeniu audio
+        audio.addEventListener("ended", () => {
+          if (navDone) return;
+          navDone = true;
+          clearTimeout(fallbackTimer);
+          location.href = targetHref;
+        });
+      } catch {
+        // jak audio nie ruszy, fallback zrobi robotę
+      }
+    },
+    true
+  );
 })();
