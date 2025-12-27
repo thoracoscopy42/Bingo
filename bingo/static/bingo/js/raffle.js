@@ -30,6 +30,46 @@
     audio.currentTime = 0;
     audio.play().catch(() => {});
   }
+  function showRerollOverlayForBoard(boardEl) {
+    const overlay = boardEl?.querySelector(".reroll-overlay");
+    if (!overlay) return null;
+
+    overlay.hidden = false;
+
+    // restart gif (żeby zawsze startował od początku)
+    const img = overlay.querySelector("img");
+    if (img && img.src) {
+      const base = img.src.split("?")[0];
+      img.src = `${base}?t=${Date.now()}`;
+    }
+    return overlay;
+  }
+
+  function hideRerollOverlay(overlay) {
+    if (overlay) overlay.hidden = true;
+  }
+
+  function playRerollSoundAndBindOverlay(audioId, overlay) {
+    const audio = document.getElementById(audioId);
+    if (!audio) {
+      hideRerollOverlay(overlay);
+      return;
+    }
+
+    // od początku
+    try { audio.currentTime = 0; } catch {}
+
+    const cleanup = () => hideRerollOverlay(overlay);
+
+    // kluczowe: znika dokładnie gdy audio się skończy
+    audio.addEventListener("ended", cleanup, { once: true });
+
+    // awaryjnie gdyby play nie ruszył / był błąd
+    audio.addEventListener("error", cleanup, { once: true });
+
+    const p = audio.play();
+    if (p && typeof p.catch === "function") p.catch(() => cleanup());
+  }
 
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -218,9 +258,14 @@
       btnReroll.addEventListener("click", async () => {
         if (btnReroll.disabled) return;
 
-        playAudioById(audioRerollId);
-
         const board = boards[active];
+
+        // pokaż overlay TYLKO dla REROLL
+        const overlay = showRerollOverlayForBoard(board);
+
+        // audio + schowanie overlay po końcu dźwięku
+        playRerollSoundAndBindOverlay(audioRerollId, overlay);
+
         const gridEl = board ? board.querySelector(".raffle-grid") : null;
         const tiles = Array.from(board?.querySelectorAll(".raffle-text") || []);
         if (!board || tiles.length !== targetTiles) return;

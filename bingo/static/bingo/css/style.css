@@ -864,19 +864,18 @@ body::after{
   position: relative;
 }
 
-.raffle-cat-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,.35);
-  pointer-events: none;
+.raffle-board--set { position: relative; }
+
+.reroll-overlay{
+  position:absolute;
+  inset:0;
+  z-index:50;
+  display:grid;
+  place-items:center;
+  pointer-events:none;
 }
 
-.raffle-cat-overlay img {
-  max-width: 260px;
-  width: 50%;
-  border-radius: 16px;
+.reroll-overlay img{
+  max-width:min(520px, 90%);
+  height:auto;
 }
