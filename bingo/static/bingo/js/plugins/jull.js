@@ -8,13 +8,13 @@
     HAPPY_CAT: "/static/bingo/images/jull/happycat.jpg",
     SAD_CAT: "/static/bingo/images/jull/sadcat.jpg",
 
-    // tło – układ
+    // tło
     ROWS: 6,
     TILE_H: 160,
     TILE_GAP: 14,
     SPEED_MIN: 18,
     SPEED_MAX: 36,
-    BG_OPACITY: 0.20,         // << mniej agresywne tło
+    BG_OPACITY: 0.22,
 
     // minigierka – tlen
     OXY_START: 0.65,
@@ -25,14 +25,10 @@
     SAD_THRESHOLD: 0.30,
     FADE_MS: 280,
 
-    // panel
-    PANEL_W: 240,
-    PANEL_H: 180,
-    PANEL_MARGIN: 18,         // odstęp od krawędzi ekranu
-    PANEL_SAFE_GAP: 10,       // minimalny dystans od elementów inputowych
-
-    // ile prób "ucieczki" panelu w górę zanim odpuścimy
-    AVOID_MAX_STEPS: 14,
+    // PANEL (większy)
+    PANEL_W: 360,
+    PANEL_H: 260,
+    PANEL_MARGIN: 18,
   };
 
   function clamp01(x) { return Math.max(0, Math.min(1, x)); }
@@ -61,21 +57,6 @@
     }
   }
 
-  function rectsOverlap(a, b) {
-    return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
-  }
-
-  function expandedRect(r, pad) {
-    return {
-      left: r.left - pad,
-      top: r.top - pad,
-      right: r.right + pad,
-      bottom: r.bottom + pad,
-      width: r.width + pad * 2,
-      height: r.height + pad * 2,
-    };
-  }
-
   whenRuntime(() => {
     window.BingoUserPlugin = {
       init(api) {
@@ -89,15 +70,19 @@
         // ===== style =====
         const style = document.createElement("style");
         style.textContent = `
-/* U was #plugin-root jest globalnie fixed + z-index:9999, więc tu robimy:
-   - tło kotków: bardzo subtelne, pointer-events none
-   - panel gry: klikalny
-   - podbijamy z-index głównego UI (panel/hero/page), żeby nie wyglądało jakby kotki były "nad" */
+/* 1) Wyłącz 2sigmy ONLY na czas pluginu */
+body::before,
+body::after{
+  background-image: none !important;
+  opacity: 0 !important;
+  content: "" !important;
+}
+
+/* tło kotków — dekoracyjne, nie klikalne */
 .jull-bgwrap{
   position: fixed;
   inset: 0;
-  z-index: 1;                 /* poniżej UI, ale pamiętaj: #plugin-root jest 9999, więc i tak to "nad" body,
-                                dlatego równoważymy to podbiciem UI (poniżej) */
+  z-index: 1;
   pointer-events: none;
   overflow: hidden;
 }
@@ -148,32 +133,42 @@
   100% { transform: translateX(calc(-50% - (${CFG.TILE_GAP}px / 2))); }
 }
 
-.jull-track.anim{
-  animation: jull-marquee var(--jullDur, 26s) linear infinite;
-}
+.jull-track.anim{ animation: jull-marquee var(--jullDur, 26s) linear infinite; }
 .jull-track.reverse{ animation-direction: reverse; }
 
-/* panel minigry */
+/* 2) Panel większy + "przezroczyste boki": panel nie łapie klików */
 .jull-panel{
   position: fixed;
   right: ${CFG.PANEL_MARGIN}px;
   bottom: ${CFG.PANEL_MARGIN}px;
-
   width: ${CFG.PANEL_W}px;
   height: ${CFG.PANEL_H}px;
 
-  z-index: 10000;             /* trzyma się nad UI, ale nie blokuje poza swoim obszarem */
+  z-index: 10000;
+
+  pointer-events: none; /* <<< najważniejsze: klik przechodzi do pól */
+  display: grid;
+  place-items: stretch;
+}
+
+/* Wszystko klikalne dopiero w card (mały obszar), reszta panelu przepuszcza klik */
+.jull-card{
   pointer-events: auto;
+  width: 100%;
+  height: 100%;
 
   border-radius: 18px;
-  background: rgba(0,0,0,.72);
+  background: rgba(0,0,0,.68);
   outline: 1px solid rgba(255,255,255,.14);
   box-shadow: 0 20px 60px rgba(0,0,0,.45);
-  display: grid;
-  grid-template-rows: 1fr auto auto auto;
   padding: 14px;
   box-sizing: border-box;
-  gap: 10px;
+
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  gap: 12px;
+
+  backdrop-filter: blur(6px);
 }
 
 .jull-catbox{
@@ -189,7 +184,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover; /* większe zdjęcie wypełnia box */
   transition: opacity ${CFG.FADE_MS}ms ease;
   user-select: none;
   pointer-events: none;
@@ -199,7 +194,7 @@
 .jull-sad{ opacity: 0; }
 
 .jull-oxy{
-  height: 14px;
+  height: 16px;
   border-radius: 999px;
   overflow: hidden;
   background: rgba(255,255,255,.12);
@@ -212,6 +207,12 @@
   border-radius: 999px;
   background: rgba(160, 255, 200, .92);
   transition: width 120ms linear, filter 120ms linear, opacity 120ms linear;
+}
+
+.jull-bottom{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
 
 .jull-hint{
@@ -228,41 +229,16 @@
 .jull-pumpbtn{
   border: 0;
   border-radius: 14px;
-  padding: 10px 12px;
-  font-weight: 900;
+  padding: 12px 12px;
+  font-weight: 950;
   cursor: pointer;
   background: rgba(255,255,255,.92);
   color: #111;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
 }
 .jull-pumpbtn:active{ transform: translateY(1px); }
-
-/* delikatny "glass" na panelu strony, żeby kotki nie kłuły w oczy – tylko jeśli plugin-root jest nad wszystkim */
-.jull-ui-raise{
-  position: relative !important;
-  z-index: 5000 !important;
-}
 `;
         document.head.appendChild(style);
-
-        // ===== podbij UI nad tło (bez grzebania w globalnym css) =====
-        // (wystarczy, że panel/hero/page będzie wyżej niż jull-bgwrap)
-        const raised = [];
-        function raiseUI() {
-          const els = [
-            document.querySelector(".page"),
-            document.querySelector(".hero"),
-            document.querySelector(".panel"),
-            document.querySelector(".panel--wide"),
-          ].filter(Boolean);
-
-          els.forEach(el => {
-            if (el.classList.contains("jull-ui-raise")) return;
-            el.classList.add("jull-ui-raise");
-            raised.push(el);
-          });
-        }
-        raiseUI();
 
         // ===== DOM: tło =====
         const bgwrap = document.createElement("div");
@@ -293,6 +269,9 @@
         const panel = document.createElement("div");
         panel.className = "jull-panel";
 
+        const card = document.createElement("div");
+        card.className = "jull-card";
+
         const catbox = document.createElement("div");
         catbox.className = "jull-catbox";
 
@@ -316,23 +295,29 @@
         const oxyFill = document.createElement("div");
         oxy.appendChild(oxyFill);
 
+        const bottom = document.createElement("div");
+        bottom.className = "jull-bottom";
+
         const hint = document.createElement("div");
         hint.className = "jull-hint";
-        hint.innerHTML = `Pompkuj tlen: <strong>klik</strong> / <strong>SPACJA</strong> / <strong>ENTER</strong>`;
+        hint.innerHTML = `Pompkuj tlen: <strong>klik w panel</strong> / <strong>SPACJA</strong> / <strong>ENTER</strong>`;
 
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "jull-pumpbtn";
         btn.textContent = "POMPUJ";
-        btn.addEventListener("click", (e) => { e.preventDefault(); pump(); });
 
-        panel.appendChild(catbox);
-        panel.appendChild(oxy);
-        panel.appendChild(hint);
-        panel.appendChild(btn);
+        bottom.appendChild(hint);
+        bottom.appendChild(btn);
+
+        card.appendChild(catbox);
+        card.appendChild(oxy);
+        card.appendChild(bottom);
+
+        panel.appendChild(card);
         root.appendChild(panel);
 
-        // ===== layout fill (marquee) =====
+        // ===== fill marquee =====
         function layoutFill() {
           const rowW = (window.innerWidth || 1200);
           const tileW = (CFG.TILE_H * 1.35) + CFG.TILE_GAP;
@@ -349,65 +334,7 @@
           });
         }
         layoutFill();
-
-        // ===== panel avoidance (żeby nie zasłaniać inputów) =====
-        function avoidInputs() {
-          // wszystko co faktycznie jest "do klikania/pisania"
-          const blockers = Array.from(document.querySelectorAll(
-            ".grid-table, .panel, .cell-wrapper, textarea.grid-cell, .cd__button, .cd__list"
-          ));
-
-          if (!blockers.length) return;
-
-          // reset do domyślnej pozycji
-          panel.style.right = `${CFG.PANEL_MARGIN}px`;
-          panel.style.bottom = `${CFG.PANEL_MARGIN}px`;
-          panel.style.top = "auto";
-          panel.style.left = "auto";
-
-          // iteracyjnie podnoś panel, aż przestanie nachodzić
-          let steps = 0;
-          while (steps < CFG.AVOID_MAX_STEPS) {
-            const pr = expandedRect(panel.getBoundingClientRect(), CFG.PANEL_SAFE_GAP);
-
-            let worst = null;
-            for (const el of blockers) {
-              const r = el.getBoundingClientRect();
-              if (r.width <= 0 || r.height <= 0) continue;
-              const rr = expandedRect(r, CFG.PANEL_SAFE_GAP);
-
-              if (rectsOverlap(pr, rr)) {
-                // ile musimy podnieść panel do góry, żeby nie nachodził
-                const pushUp = pr.bottom - rr.top;
-                if (!worst || pushUp > worst) worst = pushUp;
-              }
-            }
-
-            if (!worst) break; // ok, nie nachodzi
-
-            const curBottom = parseFloat(panel.style.bottom || `${CFG.PANEL_MARGIN}`) || CFG.PANEL_MARGIN;
-            panel.style.bottom = `${curBottom + Math.ceil(worst) + 6}px`;
-            steps++;
-          }
-
-          // nie pozwól uciec poza ekran
-          const final = panel.getBoundingClientRect();
-          if (final.top < 8) {
-            panel.style.bottom = `${Math.max(CFG.PANEL_MARGIN, (window.innerHeight - final.height - 8))}px`;
-          }
-        }
-
-        // odpal po renderze, i jeszcze raz po chwili (bo layout może się "doustawiać")
-        requestAnimationFrame(() => {
-          avoidInputs();
-          setTimeout(avoidInputs, 300);
-          setTimeout(avoidInputs, 900);
-        });
-
-        ctx.on(window, "resize", () => {
-          layoutFill();
-          avoidInputs();
-        });
+        ctx.on(window, "resize", () => layoutFill());
 
         // ===== minigame logic =====
         let oxyVal = clamp01(CFG.OXY_START);
@@ -453,14 +380,16 @@
         setMood();
         raf = requestAnimationFrame(tick);
 
-        // input: panel click + klawiatura tylko gdy kursor nad panelem
-        let armed = false;
+        // input: klik tylko w card (nie blokuje pól poza nim)
+        ctx.on(card, "pointerdown", (e) => { e.preventDefault(); pump(); }, { passive: false });
+        btn.addEventListener("click", (e) => { e.preventDefault(); pump(); });
 
-        ctx.on(panel, "pointerdown", (e) => { e.preventDefault(); pump(); }, { passive: false });
-        ctx.on(panel, "mouseenter", () => { armed = true; });
-        ctx.on(panel, "mouseleave", () => { armed = false; });
-        ctx.on(panel, "focusin", () => { armed = true; });
-        ctx.on(panel, "focusout", () => { armed = false; });
+        // klawiatura: tylko gdy kursor nad card
+        let armed = false;
+        ctx.on(card, "mouseenter", () => { armed = true; });
+        ctx.on(card, "mouseleave", () => { armed = false; });
+        ctx.on(card, "focusin", () => { armed = true; });
+        ctx.on(card, "focusout", () => { armed = false; });
 
         ctx.on(document, "keydown", (e) => {
           if (!armed) return;
@@ -477,7 +406,6 @@
           try { panel.remove(); } catch {}
           try { bgwrap.remove(); } catch {}
           try { style.remove(); } catch {}
-          try { raised.forEach(el => el.classList.remove("jull-ui-raise")); } catch {}
         };
       }
     };
