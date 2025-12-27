@@ -10,30 +10,38 @@
     IMG_1: "/static/bingo/images/stugsiana/kicia.png",
     IMG_2: "/static/bingo/images/stugsiana/kicia2.png",
 
-    // ===== NOWE: audio =====
+    // ===== audio (loop) =====
     LOOP_AUDIO_SRC: "/static/bingo/sfx/stugsiana/mango67.mp3",
-    LOOP_AUDIO_VOLUME: 0.18, // <- ściszanie tutaj (0.0 - 1.0)
+    LOOP_AUDIO_VOLUME: 0.18, // (0.0 - 1.0)
 
-    // ===== NOWE: bouncing logo =====
+    // ===== bouncing logo =====
     BOUNCE_LOGO_SRC: "/static/bingo/images/stugsiana/wzwod.jpg",
-    BOUNCE_LOGO_SIZE: 167, // px
+    BOUNCE_LOGO_SIZE: 167,
     BOUNCE_LOGO_OPACITY: 0.50,
-    BOUNCE_LOGO_MAX: 5, // limit, żeby nie zabić przeglądarki
+    BOUNCE_LOGO_MAX: 5,
 
     // ===== SLIDE CAT =====
     SLIDE_CAT_SRC: "/static/bingo/images/stugsiana/kot.png",
     SLIDE_CAT_SOUND: "/static/bingo/sfx/stugsiana/meow.mp3",
-    SLIDE_CAT_INTERVAL: 45000, // 45 sekund
-    SLIDE_CAT_DURATION: 8000,  // ile jest widoczna (ms)
+    SLIDE_CAT_INTERVAL: 45000,
     SLIDE_CAT_VOLUME: 0.50,
+
+    // loop ducking podczas miauknięcia
+    SLIDE_DUCK_FACTOR: 0.15, // 15% głośności w tle podczas SFX
 
     // popup na każdym wejściu
     ALWAYS_SHOW: true,
   };
-  
+
   const LOGO_COUNT_KEY = "bingo_stugsiana_logo_count_v1";
+
+  // ===== runtime state =====
   let slideCatPlaying = false;
+
+  // WebAudio cache dla miauknięcia
   let slideAudioCtx = null;
+  let slideAudioBuf = null;
+  let slideAudioLoading = null;
 
   function whenRuntime(fn) {
     if (window.BingoPluginRuntime?.initUserPlugin) return fn();
@@ -64,13 +72,39 @@
 
   function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
 
+  // ===== WebAudio: unlock + decode ONCE (musi być wywołane po kliknięciu usera) =====
+  function unlockSlideAudio() {
+    if (!slideAudioCtx) {
+      slideAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    // Chrome potrafi usypiać context — wznawiamy zawsze
+    slideAudioCtx.resume().catch(() => {});
+
+    if (!slideAudioLoading) {
+      slideAudioLoading = fetch(CFG.SLIDE_CAT_SOUND)
+        .then(r => r.arrayBuffer())
+        .then(buf => new Promise((resolve, reject) => {
+          // Safari/Chrome różnie: wersja callback jest najbardziej kompatybilna
+          slideAudioCtx.decodeAudioData(buf, resolve, reject);
+        }))
+        .then(decoded => {
+          slideAudioBuf = decoded;
+          return decoded;
+        })
+        .catch(() => {
+          slideAudioBuf = null;
+        });
+    }
+    return slideAudioLoading;
+  }
+
   // ===== BOUNCER ENGINE =====
   function createBouncerLayer(ctx) {
     const layer = document.createElement("div");
     layer.id = "stu-bounce-layer";
     layer.style.position = "fixed";
     layer.style.inset = "0";
-    layer.style.zIndex = "2"; // MUSI być < grid; grid zwykle ma wyższy, ale jakby co — podbij w CSS gridu
+    layer.style.zIndex = "2";
     layer.style.pointerEvents = "none";
     layer.style.overflow = "hidden";
     document.body.appendChild(layer);
@@ -93,7 +127,6 @@
       el.style.transform = "translate3d(0,0,0)";
       el.draggable = false;
 
-      // random start
       const w = window.innerWidth;
       const h = window.innerHeight;
       const size = CFG.BOUNCE_LOGO_SIZE;
@@ -146,7 +179,6 @@
       try { layer.remove(); } catch {}
     }
 
-    // public
     return { spawn, start, stop, destroy, layer };
   }
 
@@ -162,8 +194,7 @@
 
   // ===== DETECT "cell filled" =====
   function attachCellWatcher(ctx, onFirstFill) {
-    // Szukamy inputs/textarea w gridzie; event delegation na dokumencie jest najbezpieczniejsze
-    const known = new Map(); // element -> lastNonEmpty(boolean)
+    const known = new Map();
 
     function isField(el) {
       if (!el) return false;
@@ -180,14 +211,12 @@
       if (!isField(el)) return;
 
       const now = nonEmptyValue(el);
-      const prev = known.has(el) ? known.get(el) : nonEmptyValue(el); // init: current
+      const prev = known.has(el) ? known.get(el) : nonEmptyValue(el);
       known.set(el, now);
 
-      // interesuje nas tylko przejście: puste -> niepuste
       if (!prev && now) onFirstFill();
     }
 
-    // zczytaj startowo stan pól (żeby nie spawnąć od razu)
     ctx.setTimeoutSafe(() => {
       const fields = document.querySelectorAll("input, textarea");
       fields.forEach(f => known.set(f, nonEmptyValue(f)));
@@ -196,6 +225,97 @@
     ctx.on(document, "input", (e) => handle(e.target));
     ctx.on(document, "change", (e) => handle(e.target));
     ctx.on(document, "blur", (e) => handle(e.target), true);
+  }
+
+  // ===== SLIDE CAT (WebAudio + ducking loop) =====
+  function createSlideCat(ctx, getLoopAudio) {
+    let showing = false;
+
+    const el = document.createElement("img");
+    el.src = CFG.SLIDE_CAT_SRC;
+    el.alt = "grzeczna kicia";
+    el.style.position = "fixed";
+    el.style.bottom = "0";
+    el.style.top = "0";
+    el.style.height = "100vh";
+    el.style.objectFit = "contain";
+    el.style.zIndex = "3";
+    el.style.pointerEvents = "none";
+    el.style.transition = "transform 1.6s ease-in-out";
+    el.style.transform = "translateX(0)";
+    el.style.willChange = "transform";
+    el.style.display = "none";
+    document.body.appendChild(el);
+
+    function cleanup() {
+      showing = false;
+      slideCatPlaying = false;
+    }
+
+    async function show() {
+      if (showing) return;
+      showing = true;
+      slideCatPlaying = true;
+
+      const fromLeft = Math.random() < 0.5;
+
+      el.style.display = "block";
+      el.style.left = fromLeft ? "0" : "auto";
+      el.style.right = fromLeft ? "auto" : "0";
+
+      // start poza ekranem
+      el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
+      el.getBoundingClientRect();
+
+      // wjazd
+      el.style.transform = "translateX(0)";
+
+      // ducking loop
+      const loop = typeof getLoopAudio === "function" ? getLoopAudio() : null;
+      const prevVol = loop ? loop.volume : null;
+      if (loop && typeof prevVol === "number") {
+        loop.volume = Math.max(0, prevVol * CFG.SLIDE_DUCK_FACTOR);
+      }
+
+      // WebAudio play (buffer)
+      try {
+        await unlockSlideAudio(); // jeśli ctx usnął albo buffer niegotowy
+        if (!slideAudioCtx || !slideAudioBuf) throw new Error("audio not ready");
+        await slideAudioCtx.resume().catch(() => {});
+
+        const src = slideAudioCtx.createBufferSource();
+        const gain = slideAudioCtx.createGain();
+        gain.gain.value = CFG.SLIDE_CAT_VOLUME;
+
+        src.buffer = slideAudioBuf;
+        src.connect(gain).connect(slideAudioCtx.destination);
+
+        src.onended = () => {
+          // przywróć loop volume
+          if (loop && typeof prevVol === "number") loop.volume = prevVol;
+
+          // wyjazd dopiero po pełnym dźwięku
+          el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
+          ctx.setTimeoutSafe(() => {
+            el.style.display = "none";
+            cleanup();
+          }, 1800);
+        };
+
+        src.start(0);
+      } catch {
+        // fallback: jakby WebAudio padło, nie zawieszaj kota
+        if (loop && typeof prevVol === "number") loop.volume = prevVol;
+
+        el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
+        ctx.setTimeoutSafe(() => {
+          el.style.display = "none";
+          cleanup();
+        }, 1800);
+      }
+    }
+
+    return { show, destroy: () => { try { el.remove(); } catch {} } };
   }
 
   whenRuntime(() => {
@@ -207,13 +327,10 @@
         if (!root) return;
         if (!location.pathname.includes("game")) return;
 
-        const slideCat = createSlideCat(ctx);
-        let slideTimer = null;
-
-
         preload(CFG.IMG_1);
         preload(CFG.IMG_2);
         preload(CFG.BOUNCE_LOGO_SRC);
+        preload(CFG.SLIDE_CAT_SRC);
 
         // ===== styles =====
         const style = document.createElement("style");
@@ -295,65 +412,60 @@
         // ===== audio + bouncer =====
         const loopAudio = createLoopAudio();
         const bouncers = createBouncerLayer(ctx);
-        const gateState = loadState(); // { passed: true/false }
+
+        const gateState = loadState();
         const savedCount = gateState.passed
-        ? Number(localStorage.getItem(LOGO_COUNT_KEY) || 0)
-         : 0;
+          ? Number(localStorage.getItem(LOGO_COUNT_KEY) || 0)
+          : 0;
 
-        for (let i = 0; i < savedCount; i++) {
-        bouncers.spawn();
-        }
-
+        for (let i = 0; i < savedCount; i++) bouncers.spawn();
         bouncers.start();
 
-        // spawn kolejnego logo przy pierwszym wypełnieniu komórki
+        // spawn kolejnego logo co 2 wypełnienia
         let filledCounter = 0;
-
         attachCellWatcher(ctx, () => {
-        filledCounter += 1;
+          filledCounter += 1;
+          if (filledCounter % 2 === 0) bouncers.spawn();
+        });
 
-     // co 2 wypełnienia -> jedno logo
-     if (filledCounter % 2 === 0) {
-    bouncers.spawn();
-     }
-    });
+        // slide cat
+        const slideCat = createSlideCat(ctx, () => loopAudio);
+        let slideTimer = null;
 
+        // popup
         let overlay = null;
 
-        function close() {
+        function closeOverlay() {
           if (overlay && overlay.parentElement) {
             try { overlay.remove(); } catch {}
           }
           overlay = null;
         }
 
-        async function startAudioSafe() {
-          // Autoplay policy: musi być po kliknięciu usera — a my odpalamy to po kliknięciu w kicie
+        async function startLoopAudioSafe() {
           try {
             loopAudio.currentTime = 0;
             loopAudio.volume = clamp(Number(CFG.LOOP_AUDIO_VOLUME || 0.2), 0, 1);
             await loopAudio.play();
-          } catch {
-            // jak przeglądarka zablokuje mimo kliknięcia (rzadko), to trudno — nie wywalamy błędem
-          }
+          } catch {}
         }
 
         function pass() {
-            if (!slideAudioCtx) {
-            slideAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            slideAudioCtx.resume().catch(() => {});
-            }
+          // MUSI być po kliknięciu usera
+          unlockSlideAudio();
+
           saveState({ passed: true });
-          close();
-          startAudioSafe();
+          closeOverlay();
+          startLoopAudioSafe();
+
           if (!slideTimer) {
-             slideTimer = ctx.setIntervalSafe(() => {
-           slideCat.show();
-    }, CFG.SLIDE_CAT_INTERVAL);
-}
+            slideTimer = ctx.setIntervalSafe(() => {
+              slideCat.show();
+            }, CFG.SLIDE_CAT_INTERVAL);
+          }
         }
 
-        function open() {
+        function openOverlay() {
           if (slideCatPlaying) return;
           if (document.getElementById("stu-overlay")) return;
 
@@ -398,7 +510,6 @@
               e.preventDefault(); e.stopPropagation();
               pass();
             });
-
             ctx.on(card, "keydown", (e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault(); e.stopPropagation();
@@ -424,140 +535,28 @@
           overlay.appendChild(modal);
           root.appendChild(overlay);
 
-          // blokada klików “pod spodem”
           ctx.on(overlay, "pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); });
           ctx.on(overlay, "click", (e) => { e.preventDefault(); e.stopPropagation(); });
 
           ctx.setTimeoutSafe(() => { try { modal.focus(); } catch {} }, 30);
         }
 
-        // start popup
-        ctx.setTimeoutSafe(() => open(), 80);
-        ctx.on(window, "pageshow", () => {
-        open();
-        });
+        // start popup + obsługa BFCache / focus
+        ctx.setTimeoutSafe(() => openOverlay(), 80);
+        ctx.on(window, "pageshow", () => openOverlay());
         ctx.on(document, "visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-            open();
-        }
-});
+          if (document.visibilityState === "visible") openOverlay();
+        });
 
         return () => {
-          try { close(); } catch {}
+          try { closeOverlay(); } catch {}
           try { style.remove(); } catch {}
           try { bouncers.destroy(); } catch {}
           try { loopAudio.pause(); } catch {}
           try { ctx.clearIntervalSafe(slideTimer); } catch {}
+          try { slideCat.destroy?.(); } catch {}
         };
       }
     };
   });
-  function createSlideCat(ctx) {
-  let currentSfx = null;
-  let showing = false;
-  const el = document.createElement("img");
-  el.src = CFG.SLIDE_CAT_SRC;
-  el.alt = "grzeczna kicia";
-  el.style.position = "fixed";
-  el.style.bottom = "0";
-  el.style.top = "0";
-  el.style.height = "100vh";
-  el.style.objectFit = "contain";
-  el.style.zIndex = "3"; // NAD tłem, POD popupem
-  el.style.pointerEvents = "none";
-  el.style.transition = "transform 1.6s ease-in-out";
-  el.style.transform = "translateX(0)";
-  el.style.willChange = "transform";
-  el.style.display = "none";
-
-  document.body.appendChild(el);
-
- function show() {
-  if (showing) return;
-  showing = true;
-  slideCatPlaying = true;
-
-  const fromLeft = Math.random() < 0.5;
-
-  el.style.display = "block";
-  el.style.left = fromLeft ? "0" : "auto";
-  el.style.right = fromLeft ? "auto" : "0";
-
-  // start poza ekranem
-  el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
-  el.getBoundingClientRect(); // reflow
-
-  // wjazd
-  el.style.transform = "translateX(0)";
-
-  // --- świeży dźwięk za każdym razem (najpewniejsze) ---
-  if (currentSfx) {
-    try { currentSfx.pause(); } catch {}
-    currentSfx = null;
-  }
-
-// zakładamy, że slideAudioCtx został odblokowany po kliknięciu użytkownika
-fetch(CFG.SLIDE_CAT_SOUND)
-  .then(r => r.arrayBuffer())
-  .then(buf => slideAudioCtx.decodeAudioData(buf))
-  .then(decoded => {
-    const src = slideAudioCtx.createBufferSource();
-    const gain = slideAudioCtx.createGain();
-
-    gain.gain.value = CFG.SLIDE_CAT_VOLUME;
-
-    src.buffer = decoded;
-    src.connect(gain).connect(slideAudioCtx.destination);
-
-    src.onended = () => {
-      // wyjazd kota DOPIERO po pełnym dźwięku
-      el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
-      ctx.setTimeoutSafe(() => {
-        el.style.display = "none";
-        cleanup();
-      }, 1800);
-    };
-
-    src.start(0);
-  });
-
-  const cleanup = () => {
-  if (currentSfx === sfx) currentSfx = null;
-  showing = false;
-  slideCatPlaying = false;
-};
-
-  sfx.onended = () => {
-    // wyjazd dopiero po końcu dźwięku
-    el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
-    ctx.setTimeoutSafe(() => {
-      el.style.display = "none";
-      cleanup();
-    }, 1800);
-  };
-
-  // jakby coś ucięło / błąd ładowania — nie zawieś kota na zawsze
-  sfx.onerror = () => {
-    el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
-    ctx.setTimeoutSafe(() => {
-      el.style.display = "none";
-      cleanup();
-    }, 1800);
-  };
-
-  const p = sfx.play();
-  if (p && typeof p.catch === "function") {
-    p.catch(() => {
-      // jeśli autoplay jednak zablokuje, to też wyjedź
-      el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
-      ctx.setTimeoutSafe(() => {
-        el.style.display = "none";
-        cleanup();
-      }, 1800);
-    });
-  }
-}
-
-  return { show };
-}
 })();
