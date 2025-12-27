@@ -259,3 +259,18 @@ def reroll_one_grid(current_user, session_data: dict, post_data: dict, size: int
     }
 
     return True, 200, payload, session_patch
+def consume_shuffle(session_data: dict):
+    """
+    Robi CAŁĄ logikę 'shuffle limit' (bez Django):
+    - pilnuje limitu 3
+    - zwraca gotowy payload + session_patch
+    """
+    used = session_data.get("raffle_shuffles_used", 0)
+    lim = consume_limit(used, limit=3, label="shuffle")
+
+    if not lim.ok:
+        return False, 403, {"ok": False, "error": lim.error}, {}
+
+    session_patch = {"raffle_shuffles_used": lim.new_used}
+    payload = {"ok": True, "shuffles_used": lim.new_used}
+    return True, 200, payload, session_patch
