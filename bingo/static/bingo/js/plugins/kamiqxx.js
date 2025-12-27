@@ -3,21 +3,21 @@
   const CFG = {
     STORAGE_KEY: "bingo_kyspro_captcha_v1",
 
-    // co ile ma wracać paywall (ms)
+    // paywall odstęp
     PERIOD_MS: 1 * 60 * 1000,
-
-    // minimalny odstęp od ostatniego zdjęcia paywalla (ms)
+    // 
     MIN_COOLDOWN_MS: 15 * 1000,
-
     // UI
     TITLE: "Weryfikacja dostępu",
     SUBTITLE: "",
     OK: "OK",
     ERROR: "No chyba sobie żartujesz",
 
-    // AUDIO (placeholder – podepniesz w sfx)
-    // w python config: sfx={ "bg_music": [static("...mp3")] }
-    SFX_KEY: "bg_music",
+    
+    SFX_KEY: "ambient",
+    BG_VOL: 0.35,          
+    BG_FADE_MS: 700,       
+    BG_SHUFFLE: true,      
 
     // losowanie trybu: 0..1 (np. 0.5 = pół na pół)
     MODE_SUDOKU_CHANCE: 0.5,
@@ -362,45 +362,118 @@
         const root = document.getElementById("plugin-root");
         if (!root) return;
 
-        // ===== AUDIO (loop) =====
-        let bg = null;
-        let audioUnlocked = false;
+    // ===== AUDIO (ambient playlist) =====
+    let bg = null;
+    let audioUnlocked = false;
 
-        function getAudioUrl() {
-          const v = sfx?.[CFG.SFX_KEY];
-          if (Array.isArray(v)) return v[0] ? String(v[0]) : "";
-          if (typeof v === "string") return v;
-          return "";
-        }
+    let playlist = [];
+    let playlistIdx = 0;
 
-        function startLoopAudio() {
-          const url = getAudioUrl();
-          if (!url) return false;
+    function getAudioList() {
+      const v = sfx?.[CFG.SFX_KEY];
+      if (Array.isArray(v)) return v.map(String).filter(Boolean);
+      if (typeof v === "string" && v) return [String(v)];
+      return [];
+    }
 
-          if (bg && !bg.paused) return true;
+    function shuffleInPlace(a){
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = (Math.random() * (i + 1)) | 0;
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
 
-          try { if (bg) { bg.pause(); bg.currentTime = 0; } } catch {}
+    function ensurePlaylist() {
+      const list = getAudioList();
+      if (!list.length) return false;
 
-          bg = new Audio(url);
-          bg.loop = true;
-          bg.volume = 0.55;
-          bg.preload = "auto";
+      // przeładuj playlistę tylko gdy pusta albo klucz się zmienił w runtime
+      if (!playlist.length) {
+        playlist = list.slice();
+        if (CFG.BG_SHUFFLE) shuffleInPlace(playlist);
+        playlistIdx = 0;
+      }
+      return true;
+    }
 
-          const p = bg.play();
-          if (p && typeof p.then === "function") {
-            p.then(() => { audioUnlocked = true; }).catch(() => {});
-          }
-          return true;
-        }
+    function fadeTo(target, ms = 600) {
+      if (!bg) return;
+      const start = bg.volume || 0;
+      const t0 = performance.now();
+      const step = (t) => {
+        if (!bg) return;
+        const k = Math.min(1, (t - t0) / Math.max(1, ms));
+        bg.volume = start + (target - start) * k;
+        if (k < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
 
-        function unlockAudioOnce() {
-          if (audioUnlocked) return;
-          startLoopAudio();
-        }
+    function playNextTrack() {
+      if (CFG.BG_SHUFFLE && playlist.length && (playlistIdx % playlist.length === 0)) {
+        shuffleInPlace(playlist);
+      }
 
-        // łap interakcję wcześnie (capture), żeby audio działało nawet gdy overlay blokuje klik
-        ctx.on(document, "pointerdown", unlockAudioOnce, { once: true, capture: true });
-        ctx.on(document, "keydown", unlockAudioOnce, { once: true, capture: true });
+      if (!ensurePlaylist()) return false;
+
+      const src = playlist[playlistIdx % playlist.length];
+      playlistIdx++;
+
+      try {
+        if (!bg) bg = new Audio();
+        bg.pause();
+        bg.currentTime = 0;
+      } catch {}
+
+      bg.src = src;
+      bg.preload = "auto";
+      bg.loop = false;              // playlista zamiast loop jednego
+      bg.volume = 0;                // start od zera -> fade-in
+
+      bg.onended = () => {
+        // następny utwór
+        playNextTrack();
+      };
+
+      const p = bg.play();
+      if (p && typeof p.then === "function") {
+        p.then(() => {
+          audioUnlocked = true;
+          fadeTo(Number(CFG.BG_VOL ?? 0.35), Number(CFG.BG_FADE_MS ?? 700));
+        }).catch(() => {});
+      }
+      return true;
+    }
+
+    function startAmbientAudio() {
+      // jeżeli już gra – nic nie rób
+      if (bg && !bg.paused) return true;
+      return playNextTrack();
+    }
+
+    function stopAmbientAudio() {
+      if (!bg) return;
+      // krótki fade-out i pauza
+      const ms = 300;
+      const prev = bg.volume || 0;
+      fadeTo(0, ms);
+      setTimeout(() => {
+        try { bg.pause(); } catch {}
+        try { bg.currentTime = 0; } catch {}
+        try { bg.volume = prev; } catch {}
+      }, ms + 30);
+    }
+
+    function unlockAudioOnce() {
+      if (audioUnlocked) return;
+      startAmbientAudio();
+    }
+
+    // łap interakcję wcześnie (capture), żeby audio działało nawet gdy overlay blokuje klik
+    ctx.on(document, "pointerdown", unlockAudioOnce, { once: true, capture: true });
+    ctx.on(document, "keydown", unlockAudioOnce, { once: true, capture: true });
+
 
         // ===== UI =====
         const style = document.createElement("style");
@@ -591,7 +664,7 @@
 
         function openGate() {
           // spróbuj odpalić audio (jak już odblokowane interakcją – zadziała)
-          startLoopAudio();
+          startAmbientAudio();
 
           // guard: nie duplikuj
           if (document.getElementById("kys-overlay")) return;
