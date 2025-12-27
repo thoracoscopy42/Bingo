@@ -29,9 +29,7 @@
     // ile ma stać PO pełnym wsunięciu
     SLIDE_HOLD_MS: 4000,
 
-    // ducking loop podczas miauknięcia
-    // ustawiamy na 0, bo u Ciebie to realnie pomagało (jak chcesz delikatnie w tle: daj 0.05)
-    SLIDE_DUCK_TO: 0.0,
+    SLIDE_DUCK_TO: 0.15,
 
     // popup na każdym wejściu
     ALWAYS_SHOW: true,
