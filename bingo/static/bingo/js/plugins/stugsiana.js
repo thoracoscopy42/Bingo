@@ -26,8 +26,12 @@
     SLIDE_CAT_INTERVAL: 45000,
     SLIDE_CAT_VOLUME: 0.50,
 
-    // loop ducking podczas miauknięcia
-    SLIDE_DUCK_FACTOR: 0.15, // 15% głośności w tle podczas SFX
+    // ile ma stać PO pełnym wsunięciu
+    SLIDE_HOLD_MS: 4000,
+
+    // ducking loop podczas miauknięcia
+    // ustawiamy na 0, bo u Ciebie to realnie pomagało (jak chcesz delikatnie w tle: daj 0.05)
+    SLIDE_DUCK_TO: 0.0,
 
     // popup na każdym wejściu
     ALWAYS_SHOW: true,
@@ -37,11 +41,6 @@
 
   // ===== runtime state =====
   let slideCatPlaying = false;
-
-  // WebAudio cache dla miauknięcia
-  let slideAudioCtx = null;
-  let slideAudioBuf = null;
-  let slideAudioLoading = null;
 
   function whenRuntime(fn) {
     if (window.BingoPluginRuntime?.initUserPlugin) return fn();
@@ -71,32 +70,6 @@
   }
 
   function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
-
-  // ===== WebAudio: unlock + decode ONCE (musi być wywołane po kliknięciu usera) =====
-  function unlockSlideAudio() {
-    if (!slideAudioCtx) {
-      slideAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    // Chrome potrafi usypiać context — wznawiamy zawsze
-    slideAudioCtx.resume().catch(() => {});
-
-    if (!slideAudioLoading) {
-      slideAudioLoading = fetch(CFG.SLIDE_CAT_SOUND)
-        .then(r => r.arrayBuffer())
-        .then(buf => new Promise((resolve, reject) => {
-          // Safari/Chrome różnie: wersja callback jest najbardziej kompatybilna
-          slideAudioCtx.decodeAudioData(buf, resolve, reject);
-        }))
-        .then(decoded => {
-          slideAudioBuf = decoded;
-          return decoded;
-        })
-        .catch(() => {
-          slideAudioBuf = null;
-        });
-    }
-    return slideAudioLoading;
-  }
 
   // ===== BOUNCER ENGINE =====
   function createBouncerLayer(ctx) {
@@ -227,9 +200,13 @@
     ctx.on(document, "blur", (e) => handle(e.target), true);
   }
 
-  // ===== SLIDE CAT (WebAudio + ducking loop) =====
+  // ===== SLIDE CAT (PROSTE: po wsunięciu odpal dźwięk, trzymaj 4s, potem wyjazd) =====
   function createSlideCat(ctx, getLoopAudio) {
     let showing = false;
+
+    // timing musi pasować do CSS transition: 1.6s
+    const SLIDE_IN_MS = 1600;
+    const SLIDE_OUT_MS = 1800;
 
     const el = document.createElement("img");
     el.src = CFG.SLIDE_CAT_SRC;
@@ -247,12 +224,16 @@
     el.style.display = "none";
     document.body.appendChild(el);
 
+    // JEDEN audio obiekt, trzymany przy życiu (ważne!)
+    const sfx = new Audio(CFG.SLIDE_CAT_SOUND);
+    sfx.preload = "auto";
+
     function cleanup() {
       showing = false;
       slideCatPlaying = false;
     }
 
-    async function show() {
+    function show() {
       if (showing) return;
       showing = true;
       slideCatPlaying = true;
@@ -270,52 +251,51 @@
       // wjazd
       el.style.transform = "translateX(0)";
 
-      // ducking loop
       const loop = typeof getLoopAudio === "function" ? getLoopAudio() : null;
-      const prevVol = loop ? loop.volume : null;
-      if (loop && typeof prevVol === "number") {
-        loop.volume = Math.max(0, prevVol * CFG.SLIDE_DUCK_FACTOR);
-      }
+      const prevLoopVol = loop ? loop.volume : null;
 
-      // WebAudio play (buffer)
-      try {
-        await unlockSlideAudio(); // jeśli ctx usnął albo buffer niegotowy
-        if (!slideAudioCtx || !slideAudioBuf) throw new Error("audio not ready");
-        await slideAudioCtx.resume().catch(() => {});
+      // 1) PO PEŁNYM WSUNIĘCIU: duck + odpal dźwięk
+      ctx.setTimeoutSafe(() => {
+        // duck
+        if (loop && typeof prevLoopVol === "number") {
+          loop.volume = CFG.SLIDE_DUCK_TO;
+        }
 
-        const src = slideAudioCtx.createBufferSource();
-        const gain = slideAudioCtx.createGain();
-        gain.gain.value = CFG.SLIDE_CAT_VOLUME;
+        // play sfx
+        try {
+          sfx.pause();
+          sfx.currentTime = 0;
+          sfx.volume = CFG.SLIDE_CAT_VOLUME;
 
-        src.buffer = slideAudioBuf;
-        src.connect(gain).connect(slideAudioCtx.destination);
+          const p = sfx.play();
+          if (p && typeof p.catch === "function") p.catch(() => {});
+        } catch {}
+      }, SLIDE_IN_MS);
 
-        src.onended = () => {
-          // przywróć loop volume
-          if (loop && typeof prevVol === "number") loop.volume = prevVol;
-
-          // wyjazd dopiero po pełnym dźwięku
-          el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
-          ctx.setTimeoutSafe(() => {
-            el.style.display = "none";
-            cleanup();
-          }, 1800);
-        };
-
-        src.start(0);
-      } catch {
-        // fallback: jakby WebAudio padło, nie zawieszaj kota
-        if (loop && typeof prevVol === "number") loop.volume = prevVol;
-
+      // 2) TRZYMAJ 4s od momentu pełnego wsunięcia, potem wyjazd
+      ctx.setTimeoutSafe(() => {
         el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
-        ctx.setTimeoutSafe(() => {
-          el.style.display = "none";
-          cleanup();
-        }, 1800);
-      }
+      }, SLIDE_IN_MS + (CFG.SLIDE_HOLD_MS || 4000));
+
+      // 3) Po wyjeździe: schowaj + przywróć loop
+      ctx.setTimeoutSafe(() => {
+        el.style.display = "none";
+
+        if (loop && typeof prevLoopVol === "number") {
+          loop.volume = prevLoopVol;
+        }
+
+        cleanup();
+      }, SLIDE_IN_MS + (CFG.SLIDE_HOLD_MS || 4000) + SLIDE_OUT_MS);
     }
 
-    return { show, destroy: () => { try { el.remove(); } catch {} } };
+    return {
+      show,
+      destroy: () => {
+        try { sfx.pause(); } catch {}
+        try { el.remove(); } catch {}
+      }
+    };
   }
 
   whenRuntime(() => {
@@ -451,9 +431,6 @@
         }
 
         function pass() {
-          // MUSI być po kliknięciu usera
-          unlockSlideAudio();
-
           saveState({ passed: true });
           closeOverlay();
           startLoopAudioSafe();
