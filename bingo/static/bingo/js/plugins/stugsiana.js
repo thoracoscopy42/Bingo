@@ -413,6 +413,12 @@
 
         // start popup
         ctx.setTimeoutSafe(() => open(), 80);
+        ctx.on(window, "pageshow", (e) => {
+          // jeśli strona wróciła z cache
+         if (e.persisted) {
+         open();
+         }
+});
 
         return () => {
           try { close(); } catch {}
