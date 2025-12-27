@@ -1,6 +1,10 @@
 (() => {
   // ===== config =====
   const CFG = {
+
+    MUSIC_STATE_KEY: "bingo_kyspro_music_state_v1",
+    MUSIC_SAVE_EVERY_MS: 5000,  // 
+
     STORAGE_KEY: "bingo_kyspro_captcha_v1",
 
     // paywall odstęp
@@ -52,6 +56,20 @@
 
   // ===== helpers =====
   function now() { return Date.now(); }
+
+  function loadMusicState() {
+    try {
+      const raw = localStorage.getItem(CFG.MUSIC_STATE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveMusicState(obj) {
+    try { localStorage.setItem(CFG.MUSIC_STATE_KEY, JSON.stringify(obj)); } catch {}
+  }
+
 
   function loadState() {
     try {
@@ -369,6 +387,28 @@
     let playlist = [];
     let playlistIdx = 0;
 
+    let resume = loadMusicState();   
+    let saveTimer = null;
+
+    function startSavingPosition() {
+      if (saveTimer) return;
+      saveTimer = setInterval(() => {
+        if (!bg || bg.paused || !playlist.length) return;
+        saveMusicState({
+          idx: Math.max(0, playlistIdx - 1),         // aktualnie grający indeks 
+          t: Number(bg.currentTime || 0),
+          order: playlist.slice(),                   // aktualna kolejność playlisty
+          at: Date.now()
+        });
+      }, CFG.MUSIC_SAVE_EVERY_MS || 3000);
+    }
+
+    function stopSavingPosition() {
+      if (saveTimer) { clearInterval(saveTimer); saveTimer = null; }
+    }
+
+
+
     function getAudioList() {
       const v = sfx?.[CFG.SFX_KEY];
       if (Array.isArray(v)) return v.map(String).filter(Boolean);
@@ -388,14 +428,29 @@
       const list = getAudioList();
       if (!list.length) return false;
 
-      // przeładuj playlistę tylko gdy pusta albo klucz się zmienił w runtime
       if (!playlist.length) {
+        // jeżeli mamy zapisany stan z poprzedniej sesji i pasuje do listy plików
+        if (resume && Array.isArray(resume.order) && resume.order.length) {
+          // walidacja: czy zapisany order to te same utwory (bezpiecznik)
+          const a = resume.order.slice().sort().join("||");
+          const b = list.slice().map(String).sort().join("||");
+          if (a === b) {
+            playlist = resume.order.slice();
+            playlistIdx = Number.isFinite(+resume.idx) ? (+resume.idx) : 0;
+            // UWAGA: playlistIdx wskazuje "aktualny", a playNextTrack zaraz wybierze playlist[playlistIdx % n]
+            // więc nie +1 tutaj
+            return true;
+          }
+        }
+
+        // fallback: normalnie
         playlist = list.slice();
         if (CFG.BG_SHUFFLE) shuffleInPlace(playlist);
         playlistIdx = 0;
       }
       return true;
     }
+
 
     function fadeTo(target, ms = 600) {
       if (!bg) return;
@@ -412,14 +467,21 @@
 
     function playNextTrack() {
       if (!ensurePlaylist()) return false;
-      
-      if (CFG.BG_SHUFFLE && playlist.length && (playlistIdx % playlist.length === 0)) {
+
+      // jeżeli to wznowienie — nie shuffle
+      const isResume = !!resume;
+
+      // tasuj tylko na granicy 
+      if (!isResume && CFG.BG_SHUFFLE && playlist.length && (playlistIdx % playlist.length === 0)) {
         shuffleInPlace(playlist);
       }
 
-
       const src = playlist[playlistIdx % playlist.length];
+      const shouldSeek = isResume && (Number(resume.t) > 0) && (Number(resume.idx) === (playlistIdx % playlist.length));
+      const seekTo = shouldSeek ? Number(resume.t) : 0;
+
       playlistIdx++;
+
 
       try {
         if (!bg) bg = new Audio();
@@ -437,15 +499,22 @@
         playNextTrack();
       };
 
+      bg.onloadedmetadata = () => {
+        if (shouldSeek && isFinite(seekTo) && seekTo > 0 && seekTo < (bg.duration || Infinity)) {
+          try { bg.currentTime = seekTo; } catch {}
+        }
+      };
+
+
       const p = bg.play();
       if (p && typeof p.then === "function") {
         p.then(() => {
           audioUnlocked = true;
           fadeTo(Number(CFG.BG_VOL ?? 0.35), Number(CFG.BG_FADE_MS ?? 700));
+          startSavingPosition();
+          resume = null; // po pierwszym poprawnym starcie kasujemy tryb wznowienia
         }).catch(() => {});
-      }
-      return true;
-    }
+
 
     function startAmbientAudio() {
       // jeżeli już gra – nic nie rób
