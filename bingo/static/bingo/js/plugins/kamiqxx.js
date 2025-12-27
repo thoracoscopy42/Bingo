@@ -27,15 +27,16 @@
 
     // obrazki 
     GOOD_IMGS: [
-      "/static/bingo/images/kamiqxx/goodboy1.gif",
-      "/static/bingo/images/kamiqxx/goodboy2.gif",
+      "/static/bingo/images/kamiqxx/goodboy1.jpg",
+      "/static/bingo/images/kamiqxx/goodboy2.jpg",
     ],
 
     BAD_IMGS: [
-      "/static/bingo/images/kamiqxx/badboy.gif",
+      "/static/bingo/images/kamiqxx/badboy1.jpg",
       "/static/bingo/images/kamiqxx/badboy2.jpg",
       "/static/bingo/images/kamiqxx/badboy3.jpg",
       "/static/bingo/images/kamiqxx/badboy4.jpg",
+      "/static/bingo/images/kamiqxx/badboy5.jpg",
     ],
 
 
