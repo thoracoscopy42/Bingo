@@ -158,6 +158,7 @@
 
   // ===== renderers =====
   function renderFindBoy(modal, { onSuccess, setMsg }) {
+    
     const title = document.createElement("div");
     title.className = "kys-mode-title";
     title.textContent = "ZNAJDŹ GRZECZNEGO CHŁOPCA";
@@ -211,6 +212,15 @@
       } else {
         // pobierz kolejnego bada z listy 8 sztuk
         img.src = badImgsForTiles.pop();
+        img.addEventListener("error", () => {
+          // fallback: spróbuj pierwszego pewnego pliku
+          const fallback = CFG.GOOD_IMGS[0] || "";
+          if (fallback && img.src !== fallback) {
+            img.src = fallback;
+            tile.style.setProperty("--kys-img", `url("${fallback}")`);
+          }
+        });
+
       }
 
       tile.style.setProperty("--kys-img", `url("${img.src}")`);
