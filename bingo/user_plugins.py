@@ -114,6 +114,12 @@ def kamiqxx_func() -> UserPluginConfig:
         sfx={"ambient": [
                 static("bingo/sfx/kamiqxx/conangray.mp3"),
                 static("bingo/sfx/kamiqxx/cyberp.mp3"),
+                static("bingo/sfx/kamiqxx/hozier.mp3"),
+                static("bingo/sfx/kamiqxx/kissingsomeoneelse.mp3"),
+                static("bingo/sfx/kamiqxx/lost.mp3"),
+                static("bingo/sfx/kamiqxx/outoftouch.mp3"),
+                static("bingo/sfx/kamiqxx/robbers.mp3"),
+                static("bingo/sfx/kamiqxx/sitnexttome.mp3"),
                 static("bingo/sfx/kamiqxx/stevienicks.mp3"),
             ]
         }
