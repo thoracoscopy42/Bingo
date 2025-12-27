@@ -166,6 +166,7 @@
     const fine = document.createElement("div");
     fine.className = "kys-fine";
     fine.textContent = "jest tylko jeden grzeczny chłopiec";
+    fine.style.fontSize = "11px";  
     modal.appendChild(fine);
 
 
@@ -241,12 +242,10 @@
   }
 
   function renderSudoku4(modal, { onSuccess, setMsg }) {
-    const hint = document.createElement("div");
-    hint.style.marginTop = "6px";
-    hint.style.fontSize = "13px";
-    hint.style.opacity = "0.85";
-    hint.textContent = "Sudoku 4×4: wpisz cyfry 1–4 tak, żeby w każdym wierszu i kolumnie były bez powtórek.";
-    modal.appendChild(hint);
+    const title = document.createElement("div");
+    title.className = "kys-mode-title";
+    title.textContent = "WYKAŻ SIĘ INTELEKTEM";
+    modal.appendChild(title);
 
     const solution = permuteSudoku4(baseSudoku4Solution());
     const puzzle = makeSudoku4Puzzle(solution, CFG.SUDOKU_EMPTY);
@@ -400,7 +399,7 @@
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
 }
 
-.kys-title{ font-size: 22px; font-weight: 800; margin: 0 0 8px; }
+.kys-title{ font-size: 22px; font-weight: 800; margin: 0 0 8px; text-align:center; }
 .kys-sub{ font-size: 15px; opacity: .88; margin: 0 0 10px; line-height: 1.35; }
 
 .kys-row{ display:flex; gap:12px; margin-top:14px; align-items:center; justify-content:center; }
@@ -516,15 +515,18 @@
   font-weight: 900;
   opacity: .95;
   font-size: 16px;
-
-.kys-mode-title{
-  margin-top: 10px;
-  text-align: center;
-  font-size: 22px;
-  font-weight: 950;
-  letter-spacing: .6px;
 }
 
+/* drugi tytuł (tryb) pod "Weryfikacja dostępu" */
+.kys-mode-title{
+  margin-top: 4px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 950;
+  letter-spacing: .8px;
+}
+
+/* subtitle pod drugim tytułem (tylko zdjęcia) */
 .kys-fine{
   margin-top: 6px;
   text-align: center;
@@ -532,7 +534,8 @@
   opacity: .75;
 }
 
-}`;
+
+`;
         document.head.appendChild(style);
 
         // ===== overlay state =====
@@ -623,7 +626,7 @@
       modal.appendChild(picker);
 
       function modeLabel(m) {
-        return m === "sudoku4" ? "🧩 Sudoku" : "🖼️ Zdjęcia";
+        return m === "sudoku4" ? "Sudoku" : "Zdjęcia";
       }
 
       function renderMode() {
