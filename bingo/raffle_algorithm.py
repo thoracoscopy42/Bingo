@@ -221,67 +221,41 @@ def generate_initial_state(current_user, grids_count: int = 3, size: int = 4):
 
 def reroll_one_grid(current_user, session_data: dict, post_data: dict, size: int = 4):
 
-    grid_idx = parse_grid_idx(post_data.get("grid"))#walidacja grid index
+    grid_idx = parse_grid_idx(post_data.get("grid"))
     if grid_idx is None:
         return False, 400, {"ok": False, "error": "Bad grid index"}, {}
 
-    grids = normalize_grids(session_data.get("raffle_grids"))#walidacja session (czy grids istnieją)
+    grids = normalize_grids(session_data.get("raffle_grids"))
     if grids is None:
         return False, 409, {"ok": False, "error": "Session expired. Refresh."}, {}
 
     used_sets_raw = normalize_used_sets(session_data.get("raffle_used_sets"))
-    rerolls_used = session_data.get("raffle_rerolls_used", 0)
+    used_current = set(tuple(x) for x in used_sets_raw[grid_idx])
 
-    lim = consume_limit(rerolls_used, limit=3, label="rerolli")#pilnowanie limitu rerolli (3)
-    if not lim.ok:
-        return False, 403, {"ok": False, "error": lim.error}, {}
-
-    used_current: Set[UniqKey] = set(tuple(x) for x in used_sets_raw[grid_idx])
-
-    pool = extract_pool_for_user(current_user)#budowanie poola i losowanie nowego grida
+    pool = extract_pool_for_user(current_user)
     target = size * size
 
-    new_items, used_local = build_grid(pool, used_current, target=target)#losujemy z elementów nieużywanych w danym gridzie 
+    new_items, used_local = build_grid(pool, used_current, target=target)
     used_current |= used_local
 
     grids[grid_idx] = new_items
     used_sets_raw[grid_idx] = [list(x) for x in used_current]
 
+    new_used = int(session_data.get("raffle_rerolls_used") or 0) + 1
+
     session_patch = {
         "raffle_grids": grids,
         "raffle_used_sets": used_sets_raw,
-        "raffle_rerolls_used": lim.new_used,
+        "raffle_rerolls_used": new_used,
     }
 
-    cells = []
-    for item in new_items:
-        if isinstance(item, dict):
-            cells.append((item.get("text") or "").strip())
-        else:
-            cells.append("—")
+    cells = [(item.get("text") or "").strip() if isinstance(item, dict) else "—" for item in new_items]
 
     payload = {
         "ok": True,
         "grid": grid_idx,
-        "cells": cells,              # <-- TO widzi Twój JS
-        "rerolls_used": lim.new_used # (możesz zostawić, albo usunąć później)
+        "cells": cells,
+        "rerolls_used": new_used,
     }
 
-    return True, 200, payload, session_patch
-
-
-def consume_shuffle(session_data: dict):
-    """
-    Robi CAŁĄ logikę 'shuffle limit' (bez Django):
-    - pilnuje limitu 3
-    - zwraca gotowy payload + session_patch
-    """
-    used = session_data.get("raffle_shuffles_used", 0)
-    lim = consume_limit(used, limit=3, label="shuffle")
-
-    if not lim.ok:
-        return False, 403, {"ok": False, "error": lim.error}, {}
-
-    session_patch = {"raffle_shuffles_used": lim.new_used}
-    payload = {"ok": True, "shuffles_used": lim.new_used}
     return True, 200, payload, session_patch
