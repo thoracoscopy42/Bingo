@@ -17,9 +17,10 @@
         <button class="raffle-nav raffle-nav--left" type="button" aria-label="Poprzedni grid">‹</button>
         <button class="raffle-nav raffle-nav--right" type="button" aria-label="Następny grid">›</button>
 
-            <div class="raffle-stage">
-      <div class="raffle-cat-overlay" id="catGifWrap" hidden>
-        <img class="raffle-gif" src="{% static 'bingo/images/cat-gambling.gif' %}" alt="Cat slot" />
+    <div class="raffle-stage">
+      
+      <div id="catGifOverlay" class="raffle-cat-overlay" hidden>
+        <img src="{% static 'bingo/images/cat-gambling.gif' %}" alt="Cat rolling">
       </div>
 
       {% for grid in grids %}

@@ -32,20 +32,6 @@
     return Number.isFinite(n) ? n : fallback;
   }
 
-  // audio helper: zwraca element audio (albo null)
-  function playAudioById(id) {
-    const audio = document.getElementById(id);
-    if (!audio) return null;
-    try {
-      audio.currentTime = 0;
-      const p = audio.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
-      return audio;
-    } catch {
-      return audio;
-    }
-  }
-
   function initRafflePlugin() {
     const cfg = getJSONScript("raffle-config", null);
     if (!cfg) {
@@ -70,21 +56,43 @@
     const badgeShuffle = document.getElementById("badgeShuffle");
 
     const audioRerollId = (cfg.audio && cfg.audio.rerollId) || "rerollSound";
+    const rerollAudioEl = document.getElementById(audioRerollId);
 
-    // ===== CAT overlay =====
-    const catGifWrap = document.getElementById("catGifWrap");
-    const showCatGif = () => { if (catGifWrap) catGifWrap.hidden = false; };
-    const hideCatGif = () => { if (catGifWrap) catGifWrap.hidden = true; };
+    // ===== CAT overlay (HTML/CSS: id="catGifOverlay") =====
+    const catOverlay = document.getElementById("catGifOverlay");
+    const showCatGif = () => { if (catOverlay) catOverlay.hidden = false; };
+    const hideCatGif = () => { if (catOverlay) catOverlay.hidden = true; };
 
     // NA START: kot ma być niewidoczny
     hideCatGif();
+
+    // Kot ma znikać po zakończeniu dźwięku (globalnie, raz)
+    if (rerollAudioEl) {
+      rerollAudioEl.addEventListener("ended", hideCatGif);
+      // jeśli ktoś zatrzyma/odetnie audio w trakcie
+      rerollAudioEl.addEventListener("pause", () => {
+        try {
+          // ukrywaj tylko jeśli to było "w trakcie", żeby nie znikał na starcie z pauzy
+          if (rerollAudioEl.currentTime > 0 && rerollAudioEl.currentTime < rerollAudioEl.duration) {
+            hideCatGif();
+          }
+        } catch {
+          hideCatGif();
+        }
+      });
+    }
 
     let active = 0;
 
     function applyClasses() {
       if (!boards.length) return;
       boards.forEach((b, i) => {
-        b.classList.remove("raffle-board--active", "raffle-board--prev", "raffle-board--next", "raffle-board--hidden");
+        b.classList.remove(
+          "raffle-board--active",
+          "raffle-board--prev",
+          "raffle-board--next",
+          "raffle-board--hidden"
+        );
         if (i === active) b.classList.add("raffle-board--active");
         else if (i === (active + boards.length - 1) % boards.length) b.classList.add("raffle-board--prev");
         else if (i === (active + 1) % boards.length) b.classList.add("raffle-board--next");
@@ -92,7 +100,7 @@
       });
     }
 
-    // ===== BADGES: bierzemy start z HTML (czyli z DB przez template) =====
+    // ===== BADGES: start z HTML (DB) =====
     let rerollsLeft = toInt(badgeReroll?.textContent, 0);
     let shufflesLeft = toInt(badgeShuffle?.textContent, 0);
 
@@ -217,29 +225,49 @@
       });
     }
 
-    // ===== REROLL (działa jak przedtem + kot) =====
+    // ===== REROLL (backend + podmiana tekstów + kot) =====
     if (btnReroll) {
       btnReroll.addEventListener("click", async () => {
         if (btnReroll.disabled) return;
 
         const board = boards[active];
         const gridEl = board ? board.querySelector(".raffle-grid") : null;
+        if (!board || !gridEl) return;
 
-        // 1) kot ma się pojawić dopiero po kliknięciu
+        // kot pojawia się dopiero po kliknięciu reroll
         showCatGif();
 
-        // 2) audio start
-        const audio = playAudioById(audioRerollId);
-
-        // 3) kot znika DOPIERO po końcu audio
-        if (audio) {
-          audio.onended = () => hideCatGif();
+        // audio start (bez onended tutaj)
+        // jeśli autoplay zablokowany, niech kot nie wisi bez końca:
+        try {
+          if (rerollAudioEl) {
+            rerollAudioEl.currentTime = 0;
+            const p = rerollAudioEl.play();
+            if (p && typeof p.catch === "function") {
+              p.catch(() => {
+                // audio nie ruszyło -> schowaj kota po chwili, ale reroll ma działać dalej
+                setTimeout(hideCatGif, 800);
+              });
+            }
+          } else {
+            // fallback: spróbuj po id
+            const a = document.getElementById(audioRerollId);
+            if (a && a.play) {
+              a.currentTime = 0;
+              const p = a.play();
+              if (p && typeof p.catch === "function") p.catch(() => setTimeout(hideCatGif, 800));
+            } else {
+              setTimeout(hideCatGif, 800);
+            }
+          }
+        } catch {
+          setTimeout(hideCatGif, 800);
         }
 
         const form = new FormData();
         form.append("grid", String(active));
 
-        if (gridEl) gridEl.classList.add("is-rerolling");
+        gridEl.classList.add("is-rerolling");
         btnReroll.disabled = true;
 
         try {
@@ -254,7 +282,6 @@
           if (!data.ok) {
             showToast?.(data.error || "Reroll blocked", "error", 2200);
             applyLeftFromResponse(data);
-            // na błędzie chowamy kota, żeby nie wisiał
             hideCatGif();
             return;
           }
@@ -263,7 +290,7 @@
 
           const tiles = Array.from(board.querySelectorAll(".raffle-text"));
 
-          // zachowaj Twój timing pod audio
+          // Twój timing pod audio
           await sleep(1367);
 
           if (Array.isArray(data.cells)) {
@@ -280,11 +307,11 @@
           hideCatGif();
         } finally {
           setTimeout(() => {
-            if (gridEl) gridEl.classList.remove("is-rerolling");
+            gridEl.classList.remove("is-rerolling");
           }, 260);
 
           updateBadges();
-          // UWAGA: kota NIE chowamy tutaj. Tylko ended (albo error).
+          // kota NIE chowamy tutaj — tylko ended/pause lub error
         }
       });
     }

@@ -860,35 +860,23 @@ body::after{
 
 /* stage musi być referencją dla overlay */
 /* raffle-stage musi być rodzicem pozycjonowania */
-.raffle-stage{
+.raffle-stage {
   position: relative;
 }
 
-/* overlay kota nad CAŁĄ planszą */
-.raffle-cat-overlay{
+.raffle-cat-overlay {
   position: absolute;
   inset: 0;
-  z-index: 50;
-
-  display: grid;
-  place-items: center;
-
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: rgba(0,0,0,.35);
-  backdrop-filter: blur(2px);
-
-  pointer-events: none; /* nie blokuje klików w UI */
+  pointer-events: none;
 }
 
-/* jak hidden -> nie istnieje wizualnie */
-.raffle-cat-overlay[hidden]{
-  display: none !important;
-}
-
-/* sam gif */
-.raffle-gif{
-  width: min(360px, 72%);
-  height: auto;
+.raffle-cat-overlay img {
+  max-width: 260px;
+  width: 50%;
   border-radius: 16px;
-  border: 1px solid rgba(255,255,255,.14);
-  box-shadow: 0 18px 55px rgba(0,0,0,.55);
 }
