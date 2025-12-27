@@ -20,6 +20,13 @@
     BOUNCE_LOGO_OPACITY: 0.50,
     BOUNCE_LOGO_MAX: 5, // limit, żeby nie zabić przeglądarki
 
+    // ===== SLIDE CAT =====
+    SLIDE_CAT_SRC: "/static/bingo/images/stugsiana/kot.png",
+    SLIDE_CAT_SOUND: "/static/bingo/sfx/stugsiana/meow.mp3",
+    SLIDE_CAT_INTERVAL: 45000, // 45 sekund
+    SLIDE_CAT_DURATION: 8000,  // ile jest widoczna (ms)
+    SLIDE_CAT_VOLUME: 0.50,
+
     // popup na każdym wejściu
     ALWAYS_SHOW: true,
   };
@@ -196,9 +203,10 @@
 
         const root = document.getElementById("plugin-root");
         if (!root) return;
+        if (!location.pathname.includes("game")) return;
 
-        // tylko na /game/
-        if (!String(location.pathname || "").includes("game")) return;
+        const slideCat = createSlideCat(ctx);
+        let slideTimer = null;
 
 
         preload(CFG.IMG_1);
@@ -332,6 +340,11 @@
           saveState({ passed: true });
           close();
           startAudioSafe();
+          if (!slideTimer) {
+             slideTimer = ctx.setIntervalSafe(() => {
+           slideCat.show();
+    }, CFG.SLIDE_CAT_INTERVAL);
+}
         }
 
         function open() {
@@ -425,8 +438,61 @@
           try { style.remove(); } catch {}
           try { bouncers.destroy(); } catch {}
           try { loopAudio.pause(); } catch {}
+          try { ctx.clearIntervalSafe(slideTimer); } catch {}
         };
       }
     };
   });
+  function createSlideCat(ctx) {
+  const el = document.createElement("img");
+  el.src = CFG.SLIDE_CAT_SRC;
+  el.alt = "grzeczna kicia";
+  el.style.position = "fixed";
+  el.style.bottom = "0";
+  el.style.top = "0";
+  el.style.height = "100vh";
+  el.style.objectFit = "contain";
+  el.style.zIndex = "3"; // NAD tłem, POD popupem
+  el.style.pointerEvents = "none";
+  el.style.transition = "transform 1.6s ease-in-out";
+  el.style.transform = "translateX(0)";
+  el.style.willChange = "transform";
+  el.style.display = "none";
+
+  document.body.appendChild(el);
+
+  const audio = new Audio(CFG.SLIDE_CAT_SOUND);
+  audio.volume = CFG.SLIDE_CAT_VOLUME;
+
+  function show() {
+    const fromLeft = Math.random() < 0.5;
+
+    el.style.display = "block";
+    el.style.left = fromLeft ? "0" : "auto";
+    el.style.right = fromLeft ? "auto" : "0";
+
+    // start poza ekranem
+    el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
+
+    // force reflow
+    el.getBoundingClientRect();
+
+    // wjazd
+    el.style.transform = "translateX(0)";
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+
+    // wyjazd
+    ctx.setTimeoutSafe(() => {
+      el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
+    }, CFG.SLIDE_CAT_DURATION);
+
+    // schowanie
+    ctx.setTimeoutSafe(() => {
+      el.style.display = "none";
+    }, CFG.SLIDE_CAT_DURATION + 1800);
+  }
+
+  return { show };
+}
 })();
