@@ -1,4 +1,5 @@
 (() => {
+  // ===== Helpers =====
   function getJSONScript(id, fallback = null) {
     const el = document.getElementById(id);
     if (!el) return fallback;
@@ -27,20 +28,21 @@
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
   function toInt(x, fallback = 0) {
-    const n = Number(x);
+    const n = Number(String(x ?? "").trim());
     return Number.isFinite(n) ? n : fallback;
   }
 
+  // audio helper: zwraca element audio (albo null)
   function playAudioById(id) {
     const audio = document.getElementById(id);
-    if (!audio) return { ok: false, audio: null };
+    if (!audio) return null;
     try {
       audio.currentTime = 0;
       const p = audio.play();
       if (p && typeof p.catch === "function") p.catch(() => {});
-      return { ok: true, audio };
+      return audio;
     } catch {
-      return { ok: false, audio };
+      return audio;
     }
   }
 
@@ -54,7 +56,6 @@
     const endpoints = cfg.endpoints || {};
     const size = cfg.gridSize || 4;
     const targetTiles = size * size;
-
     const csrftoken = getCsrfToken();
 
     const boards = Array.from(document.querySelectorAll(".raffle-board--set"));
@@ -70,13 +71,12 @@
 
     const audioRerollId = (cfg.audio && cfg.audio.rerollId) || "rerollSound";
 
-    // === CAT overlay (JEDEN na całe stage) ===
+    // ===== CAT overlay =====
     const catGifWrap = document.getElementById("catGifWrap");
+    const showCatGif = () => { if (catGifWrap) catGifWrap.hidden = false; };
+    const hideCatGif = () => { if (catGifWrap) catGifWrap.hidden = true; };
 
-    function showCatGif() { if (catGifWrap) catGifWrap.hidden = false; }
-    function hideCatGif() { if (catGifWrap) catGifWrap.hidden = true; }
-
-    // startowo: NIEWIDOCZNY
+    // NA START: kot ma być niewidoczny
     hideCatGif();
 
     let active = 0;
@@ -92,6 +92,7 @@
       });
     }
 
+    // ===== BADGES: bierzemy start z HTML (czyli z DB przez template) =====
     let rerollsLeft = toInt(badgeReroll?.textContent, 0);
     let shufflesLeft = toInt(badgeShuffle?.textContent, 0);
 
@@ -124,9 +125,11 @@
       applyClasses();
     }
 
+    // NAV
     if (left) left.addEventListener("click", () => show(active - 1));
     if (right) right.addEventListener("click", () => show(active + 1));
 
+    // INIT
     applyClasses();
     updateBadges();
 
@@ -139,7 +142,6 @@
         const gridEl = board?.querySelector(".raffle-grid");
         const tiles = Array.from(board?.querySelectorAll(".raffle-tile") || []);
         const textsEls = Array.from(board?.querySelectorAll(".raffle-text") || []);
-
         if (!gridEl || tiles.length !== targetTiles) return;
 
         btnShuffle.disabled = true;
@@ -153,9 +155,9 @@
           const data = await res.json();
 
           if (!data.ok) {
-           showToast?.(data.error || "Reroll blocked", "error", 2200);
-          applyLeftFromResponse(data);
-          return;
+            showToast?.(data.error || "Shuffle blocked", "error", 2200);
+            applyLeftFromResponse(data);
+            return;
           }
 
           applyLeftFromResponse(data);
@@ -215,23 +217,24 @@
       });
     }
 
-    // ===== REROLL =====
+    // ===== REROLL (działa jak przedtem + kot) =====
     if (btnReroll) {
       btnReroll.addEventListener("click", async () => {
         if (btnReroll.disabled) return;
 
-        // pokaż kota i odpal audio
-        showCatGif();
-        const { audio } = playAudioById(audioRerollId);
+        const board = boards[active];
+        const gridEl = board ? board.querySelector(".raffle-grid") : null;
 
-        // kot ma znikać DOPIERO jak dźwięk skończy grać:
-        // więc podpinamy ended tu (i zdejmujemy poprzedni listener, żeby nie dublować)
+        // 1) kot ma się pojawić dopiero po kliknięciu
+        showCatGif();
+
+        // 2) audio start
+        const audio = playAudioById(audioRerollId);
+
+        // 3) kot znika DOPIERO po końcu audio
         if (audio) {
           audio.onended = () => hideCatGif();
         }
-
-        const board = boards[active];
-        const gridEl = board ? board.querySelector(".raffle-grid") : null;
 
         const form = new FormData();
         form.append("grid", String(active));
@@ -247,13 +250,12 @@
           });
 
           const data = await res.json();
-          // debug (na chwilę) - zobaczysz czy backend zwraca cells
-          console.log("[reroll] response:", data);
 
           if (!data.ok) {
             showToast?.(data.error || "Reroll blocked", "error", 2200);
             applyLeftFromResponse(data);
-            hideCatGif(); // na błędzie chowamy, bo dźwięk może nie iść
+            // na błędzie chowamy kota, żeby nie wisiał
+            hideCatGif();
             return;
           }
 
@@ -261,6 +263,7 @@
 
           const tiles = Array.from(board.querySelectorAll(".raffle-text"));
 
+          // zachowaj Twój timing pod audio
           await sleep(1367);
 
           if (Array.isArray(data.cells)) {
@@ -268,7 +271,7 @@
               if (tiles[i]) tiles[i].textContent = txt;
             });
           } else {
-            console.warn("[reroll] missing data.cells");
+            console.warn("[reroll] missing data.cells", data);
           }
 
         } catch (e) {
@@ -281,7 +284,7 @@
           }, 260);
 
           updateBadges();
-          // UWAGA: NIE chowamy kota tutaj. Tylko ended (albo error).
+          // UWAGA: kota NIE chowamy tutaj. Tylko ended (albo error).
         }
       });
     }

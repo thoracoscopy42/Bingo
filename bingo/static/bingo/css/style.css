@@ -859,6 +859,7 @@ body::after{
 }
 
 /* stage musi być referencją dla overlay */
+/* raffle-stage musi być rodzicem pozycjonowania */
 .raffle-stage{
   position: relative;
 }
@@ -867,7 +868,7 @@ body::after{
 .raffle-cat-overlay{
   position: absolute;
   inset: 0;
-  z-index: 9999;
+  z-index: 50;
 
   display: grid;
   place-items: center;
@@ -875,15 +876,15 @@ body::after{
   background: rgba(0,0,0,.35);
   backdrop-filter: blur(2px);
 
-  /* overlay nie musi blokować klików - ale i tak masz disabled button */
-  pointer-events: none;
+  pointer-events: none; /* nie blokuje klików w UI */
 }
 
-/* hidden = totalnie niewidoczny */
+/* jak hidden -> nie istnieje wizualnie */
 .raffle-cat-overlay[hidden]{
   display: none !important;
 }
 
+/* sam gif */
 .raffle-gif{
   width: min(360px, 72%);
   height: auto;

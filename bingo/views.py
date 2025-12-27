@@ -15,7 +15,7 @@ from django.db import transaction
 
 from .user_plugins import get_user_plugin
 from .models import BingoBoard,RaffleState
-from .raffle_algorithm import generate_initial_state,reroll_one_grid,consume_shuffle,to_grids_2d
+from .raffle_algorithm import generate_initial_state,reroll_one_grid,to_grids_2d,normalize_grids
         
 
 
@@ -93,6 +93,22 @@ def save_board(request):
 
     return JsonResponse({"ok": True})
 
+def _raffle_grids_flat_ok(payload: dict, grids_count: int = 3, size: int = 4) -> bool:
+    """
+    Pilnuje, żeby raffle_grids było:
+    - listą długości grids_count
+    - każda lista ma dokładnie size*size elementów (flat)
+    """
+    g = payload.get("raffle_grids")
+    if not isinstance(g, list) or len(g) != grids_count:
+        return False
+    target = size * size
+    for one in g:
+        if not isinstance(one, list) or len(one) != target:
+            return False
+    return True
+
+
 @login_required
 def raffle(request):
     state, _ = RaffleState.objects.get_or_create(user=request.user)
@@ -100,17 +116,18 @@ def raffle(request):
     payload = state.generated_board_payload or {}
     grids_2d = payload.get("grids_2d")
 
-    # dodatkowo: jeśli raffle_grids jest złe (np. 2D), też regeneruj
-    from .raffle_algorithm import normalize_grids
+    # 1) grids_2d musi istnieć i być listą
+    grids_2d_ok = isinstance(grids_2d, list) and len(grids_2d) > 0
 
-    raffle_grids_ok = normalize_grids(payload.get("raffle_grids")) is not None
+    # 2) raffle_grids musi być poprawnym "flat" (i przechodzić normalize)
+    raffle_grids_ok = (normalize_grids(payload.get("raffle_grids")) is not None) and _raffle_grids_flat_ok(payload, 3, 4)
 
-    if not (isinstance(grids_2d, list) and grids_2d) or not raffle_grids_ok:
+    if not grids_2d_ok or not raffle_grids_ok:
         session_patch, grids_2d = generate_initial_state(request.user, grids_count=3, size=4)
 
         state.generated_board_payload = {
-            **session_patch,      # ✅ raffle_grids (flat), raffle_used_sets, raffle_rerolls_used, raffle_shuffles_used
-            "grids_2d": grids_2d, # ✅ do rendera w HTML
+            **session_patch,        # raffle_grids, raffle_used_sets, raffle_rerolls_used, raffle_shuffles_used
+            "grids_2d": grids_2d,   # do rendera w HTML
             "size": 4,
             "grids_count": 3,
         }
