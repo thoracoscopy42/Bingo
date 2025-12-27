@@ -71,6 +71,9 @@
 
     let active = 0;
 
+    // ✅ Start: bierzemy stan z HTML (czyli z DB przez template)
+    let rerollsLeft = toInt(badgeReroll?.textContent, 0);
+    let shufflesLeft = toInt(badgeShuffle?.textContent, 0);
 
     function applyClasses() {
       if (!boards.length) return;
@@ -87,24 +90,23 @@
         else b.classList.add("raffle-board--hidden");
       });
     }
-      let rerollsLeft = Number(badgeReroll?.textContent || 0);
-      let shufflesLeft = Number(badgeShuffle?.textContent || 0);  
+
     function updateBadges() {
-  const rl = Math.max(0, Number.isFinite(rerollsLeft) ? rerollsLeft : 0);
-  const sl = Math.max(0, Number.isFinite(shufflesLeft) ? shufflesLeft : 0);
+      const rl = Math.max(0, toInt(rerollsLeft, 0));
+      const sl = Math.max(0, toInt(shufflesLeft, 0));
 
-  if (badgeReroll) {
-    badgeReroll.textContent = String(rl);
-    badgeReroll.classList.toggle("btn-badge--disabled", rl === 0);
-  }
-  if (badgeShuffle) {
-    badgeShuffle.textContent = String(sl);
-    badgeShuffle.classList.toggle("btn-badge--disabled", sl === 0);
-  }
+      if (badgeReroll) {
+        badgeReroll.textContent = String(rl);
+        badgeReroll.classList.toggle("btn-badge--disabled", rl === 0);
+      }
+      if (badgeShuffle) {
+        badgeShuffle.textContent = String(sl);
+        badgeShuffle.classList.toggle("btn-badge--disabled", sl === 0);
+      }
 
-  if (btnReroll) btnReroll.disabled = (rl === 0);
-  if (btnShuffle) btnShuffle.disabled = (sl === 0);
-}
+      if (btnReroll) btnReroll.disabled = (rl === 0);
+      if (btnShuffle) btnShuffle.disabled = (sl === 0);
+    }
 
     function applyLeftFromResponse(data) {
       if (data && typeof data.rerolls_left === "number") rerollsLeft = data.rerolls_left;
@@ -126,7 +128,7 @@
     applyClasses();
     updateBadges();
 
-    // SHUFFLE (backend limit + animacja)
+    // ===== SHUFFLE (backend limit + animacja do środka i z powrotem) =====
     if (btnShuffle) {
       btnShuffle.addEventListener("click", async () => {
         if (btnShuffle.disabled) return;
@@ -138,7 +140,7 @@
 
         if (!gridEl || tiles.length !== targetTiles) return;
 
-        // UI lock (żeby nie spamować klikami)
+        // lock na czas requestu/animacji
         btnShuffle.disabled = true;
 
         try {
@@ -151,12 +153,12 @@
 
           if (!data.ok) {
             showToast?.(data.error || "Shuffle blocked", "error", 2200);
-            // nawet na błędzie spróbuj zaciągnąć left jeśli backend zwrócił
+            // nawet na błędzie, jak backend zwrócił left, to aktualizuj
             applyLeftFromResponse(data);
             return;
           }
 
-          // Ustaw left z backendu
+          // ✅ synchronizacja z DB (ważne!)
           applyLeftFromResponse(data);
 
           const first = tiles.map(t => t.getBoundingClientRect());
@@ -206,19 +208,22 @@
 
           await Promise.allSettled(fromCenterToCellAnims.map(a => a.finished));
           fromCenterToCellAnims.forEach(a => a.cancel());
+
           gridEl.classList.remove("is-shuffling");
 
         } catch (e) {
           console.error(e);
-          gridEl?.classList.remove("is-shuffling");
           showToast?.("Błąd shuffle (network)", "error", 2200);
+          gridEl?.classList.remove("is-shuffling");
         } finally {
-          updateBadges(); // odblokuje wg aktualnych left
+          // ❗ NIE robimy tu updateBadges() “w ciemno”
+          // badge wraca do poprawnego stanu przez applyLeftFromResponse / init
+          updateBadges(); // tylko po to, żeby odblokować przycisk wg aktualnego left
         }
       });
     }
 
-    // REROLL (backend limit + podmiana tekstów)
+    // ===== REROLL (backend limit + podmiana tekstów) =====
     if (btnReroll) {
       btnReroll.addEventListener("click", async () => {
         if (btnReroll.disabled) return;
@@ -249,18 +254,19 @@
             return;
           }
 
-          // Ustaw left z backendu
+          // ✅ synchronizacja z DB (ważne!)
           applyLeftFromResponse(data);
 
           const tiles = Array.from(board.querySelectorAll(".raffle-text"));
 
           await sleep(1367); // do dostosowania
 
-          // backend powinien zwracać data.cells (lista 16)
           if (Array.isArray(data.cells)) {
             data.cells.forEach((txt, i) => {
               if (tiles[i]) tiles[i].textContent = txt;
             });
+          } else {
+            console.warn("[reroll] Missing cells in response", data);
           }
 
         } catch (e) {
@@ -271,12 +277,13 @@
             if (gridEl) gridEl.classList.remove("is-rerolling");
           }, 260);
 
+          // odblokuj wg aktualnego stanu
           updateBadges();
         }
       });
     }
 
-    // WYBIERAM CIEBIE: JSON aktualnego grida z DOM
+    // ===== WYBIERAM CIEBIE: JSON aktualnego grida z DOM =====
     if (btnPick) {
       btnPick.addEventListener("click", () => {
         const board = boards[active];
