@@ -446,6 +446,8 @@
     };
   });
   function createSlideCat(ctx) {
+  let currentSfx = null;
+  let showing = false;
   const el = document.createElement("img");
   el.src = CFG.SLIDE_CAT_SRC;
   el.alt = "grzeczna kicia";
@@ -463,43 +465,70 @@
 
   document.body.appendChild(el);
 
-  const audio = new Audio(CFG.SLIDE_CAT_SOUND);
-  audio.volume = CFG.SLIDE_CAT_VOLUME;
+ function show() {
+  if (showing) return;        // nie nakładaj dwóch animacji
+  showing = true;
 
-  function show() {
-    const fromLeft = Math.random() < 0.5;
+  const fromLeft = Math.random() < 0.5;
 
-    el.style.display = "block";
-    el.style.left = fromLeft ? "0" : "auto";
-    el.style.right = fromLeft ? "auto" : "0";
+  el.style.display = "block";
+  el.style.left = fromLeft ? "0" : "auto";
+  el.style.right = fromLeft ? "auto" : "0";
 
-    // start poza ekranem
-    el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
+  // start poza ekranem
+  el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
+  el.getBoundingClientRect(); // reflow
 
-    // force reflow
-    el.getBoundingClientRect();
+  // wjazd
+  el.style.transform = "translateX(0)";
 
-    // wjazd
-    el.style.transform = "translateX(0)";
-    audio.pause();
-    audio.currentTime = 0;
-
-    const p = audio.play();
-    if (p && typeof p.then === "function") p.catch(() => {});
-
-    // najpierw wyczyść poprzedni handler, żeby się nie dublował
-    audio.onended = null;
-
-    audio.onended = () => {
-    // wyjazd dopiero po zakończeniu dźwięku
-    el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
-
-    // schowanie po animacji wyjazdu (1.6s w CSS)
-    ctx.setTimeoutSafe(() => {
-        el.style.display = "none";
-    }, 1800);
-    };
+  // --- świeży dźwięk za każdym razem (najpewniejsze) ---
+  if (currentSfx) {
+    try { currentSfx.pause(); } catch {}
+    currentSfx = null;
   }
+
+  const sfx = new Audio(CFG.SLIDE_CAT_SOUND);
+  sfx.preload = "auto";
+  sfx.volume = CFG.SLIDE_CAT_VOLUME;
+  sfx.currentTime = 0;
+  currentSfx = sfx;
+
+  const cleanup = () => {
+    if (currentSfx === sfx) currentSfx = null;
+    showing = false;
+  };
+
+  sfx.onended = () => {
+    // wyjazd dopiero po końcu dźwięku
+    el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
+    ctx.setTimeoutSafe(() => {
+      el.style.display = "none";
+      cleanup();
+    }, 1800);
+  };
+
+  // jakby coś ucięło / błąd ładowania — nie zawieś kota na zawsze
+  sfx.onerror = () => {
+    el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
+    ctx.setTimeoutSafe(() => {
+      el.style.display = "none";
+      cleanup();
+    }, 1800);
+  };
+
+  const p = sfx.play();
+  if (p && typeof p.catch === "function") {
+    p.catch(() => {
+      // jeśli autoplay jednak zablokuje, to też wyjedź
+      el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
+      ctx.setTimeoutSafe(() => {
+        el.style.display = "none";
+        cleanup();
+      }, 1800);
+    });
+  }
+}
 
   return { show };
 }
