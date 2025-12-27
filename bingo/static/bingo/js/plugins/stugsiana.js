@@ -23,6 +23,8 @@
     // popup na każdym wejściu
     ALWAYS_SHOW: true,
   };
+  
+  const LOGO_COUNT_KEY = "bingo_stugsiana_logo_count_v1";
 
   function whenRuntime(fn) {
     if (window.BingoPluginRuntime?.initUserPlugin) return fn();
@@ -198,8 +200,6 @@
         // tylko na /game/
         if (!String(location.pathname || "").includes("game")) return;
 
-        const st = loadState();
-        if (!CFG.ALWAYS_SHOW && st.passed) return;
 
         preload(CFG.IMG_1);
         preload(CFG.IMG_2);
