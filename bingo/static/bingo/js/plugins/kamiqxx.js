@@ -430,7 +430,7 @@
       bg.src = src;
       bg.preload = "auto";
       bg.loop = false;              // playlista zamiast loop jednego
-      bg.volume = 0;                // start od zera -> fade-in
+      bg.volume = 0.05;                // start od zera -> fade-in
 
       bg.onended = () => {
         // następny utwór
@@ -441,7 +441,7 @@
       if (p && typeof p.then === "function") {
         p.then(() => {
           audioUnlocked = true;
-          fadeTo(Number(CFG.BG_VOL ?? 0.35), Number(CFG.BG_FADE_MS ?? 700));
+          fadeTo(Number(CFG.BG_VOL ?? 0.35), Number(CFG.BG_FADE_MS ?? 1000));
         }).catch(() => {});
       }
       return true;
