@@ -1,5 +1,4 @@
 (() => {
-  // === CONFIG ===
   const CFG = {
     SFX_SRC: "/static/bingo/sfx/intoraffle.mp3",
     FADE_MS: 12670,
@@ -12,31 +11,119 @@
     FALLBACK_NAV_MS: 25000,
   };
 
-  // tylko na /game/
   if (!String(location.pathname || "").includes("game")) return;
 
-  // --- GLOBAL MUTE ---
+  // ---------------------------
+  // WEB AUDIO GLOBAL MUTE BUS
+  // ---------------------------
+  const WebAudioBus = (() => {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return { setMuted() {} };
+
+    const contexts = new Set();         // trzymamy referencje do contextów
+    const masterByCtx = new WeakMap();  // ctx -> masterGain
+    let installed = false;
+    let globallyMuted = false;
+
+    function ensureMaster(ctx) {
+      let g = masterByCtx.get(ctx);
+      if (g) return g;
+
+      g = ctx.createGain();
+      g.gain.value = globallyMuted ? 0 : 1;
+
+      // master -> destination
+      const origConnect = AudioNode.prototype.connect;
+      origConnect.call(g, ctx.destination);
+
+      masterByCtx.set(ctx, g);
+      contexts.add(ctx);
+      return g;
+    }
+
+    function install() {
+      if (installed) return;
+      installed = true;
+
+      // 1) patch AudioContext constructor (żeby łapać nowe contexty)
+      // Nie da się łatwo "podmienić" klasy w 100% bez ryzyk,
+      // więc robimy: patch na connect + rejestracja na resume/create.
+      // Najważniejsze: patch connect() działa, jeśli transition.js ładuje się PRZED pluginami.
+
+      // 2) patch connect() - przekieruj destination -> masterGain
+      const origConnect = AudioNode.prototype.connect;
+      AudioNode.prototype.connect = function (destination, ...rest) {
+        try {
+          const ctx = this.context;
+          if (ctx && destination === ctx.destination) {
+            const master = ensureMaster(ctx);
+            return origConnect.call(this, master, ...rest);
+          }
+        } catch {}
+        return origConnect.call(this, destination, ...rest);
+      };
+
+      // 3) patch resume() żeby masterGain zawsze istniał
+      const origResume = Ctx.prototype.resume;
+      if (origResume) {
+        Ctx.prototype.resume = function (...args) {
+          try { ensureMaster(this); } catch {}
+          return origResume.apply(this, args);
+        };
+      }
+
+      // 4) patch createBufferSource/createOscillator (żeby "dotknąć" ctx i zarejestrować)
+      const wrapFactory = (name) => {
+        const orig = Ctx.prototype[name];
+        if (!orig) return;
+        Ctx.prototype[name] = function (...args) {
+          try { ensureMaster(this); } catch {}
+          return orig.apply(this, args);
+        };
+      };
+      wrapFactory("createBufferSource");
+      wrapFactory("createOscillator");
+      wrapFactory("createMediaElementSource");
+      wrapFactory("createMediaStreamSource");
+      wrapFactory("createGain");
+    }
+
+    function setMuted(muted) {
+      globallyMuted = !!muted;
+      for (const ctx of contexts) {
+        try {
+          const master = ensureMaster(ctx);
+          master.gain.value = globallyMuted ? 0 : 1;
+        } catch {}
+      }
+    }
+
+    install();
+    return { setMuted };
+  })();
+
+  // ---------------------------
+  // HTML MEDIA MUTE
+  // ---------------------------
   function hardMuteAllMedia() {
-    // 1) wycisz wszystko co już istnieje
+    // wycisz istniejące audio/video
     document.querySelectorAll("audio, video").forEach((m) => {
       try {
         if (m.dataset.prevVolume == null) m.dataset.prevVolume = String(m.volume ?? 1);
         m.muted = true;
         m.volume = 0;
-        m.pause?.(); // jeśli nie chcesz pause, usuń tę linię
+        m.pause?.();
       } catch {}
     });
 
-    // 2) patch na przyszłe "new Audio()" (i każde .play())
+    // patch na przyszłe new Audio()
     if (!window.__mutePatchInstalled) {
       window.__mutePatchInstalled = true;
-
       const origPlay = HTMLMediaElement.prototype.play;
       HTMLMediaElement.prototype.play = function () {
         try {
-          // WYJĄTEK: jeśli element ma allowSound=1, nie wyciszamy go
           if (this?.dataset?.allowSound === "1") {
-            // nic
+            // to jest nasz transition track
           } else {
             this.muted = true;
             this.volume = 0;
@@ -45,8 +132,14 @@
         return origPlay.apply(this, arguments);
       };
     }
+
+    // I NAJWAŻNIEJSZE: WebAudio OFF
+    WebAudioBus.setMuted(true);
   }
 
+  // ---------------------------
+  // UI overlay + drop
+  // ---------------------------
   function ensureOverlay() {
     let ov = document.getElementById("transition-ov");
     if (ov) return ov;
@@ -107,14 +200,10 @@
   async function playSfx() {
     const a = new Audio(CFG.SFX_SRC);
     a.preload = "auto";
-
-    // !!! WAŻNE: oznaczamy jako "wyjątek" od global mute patcha
     a.dataset.allowSound = "1";
     a.muted = false;
-
     a.volume = Math.max(0, Math.min(1, Number(CFG.SFX_VOL) || 1));
-
-    await a.play(); // wywołane po kliknięciu, więc autoplay powinno przejść
+    await a.play();
     return a;
   }
 
@@ -146,13 +235,13 @@
 
       const targetHref = a.href;
 
-      // 1) NAJPIERW wycisz wszystko inne
+      // 1) mute WSZYSTKO inne (HTML + WebAudio)
       hardMuteAllMedia();
 
-      // 2) fade do czerni
+      // 2) fade
       fadeOutEverything();
 
-      // 3) fallback na wypadek jak audio nie ruszy / nie ma ended
+      // 3) fallback nav
       let navDone = false;
       const fallbackTimer = setTimeout(() => {
         if (navDone) return;
@@ -163,13 +252,11 @@
       try {
         const audio = await playSfx();
 
-        // drop obrazka w określonym momencie
         setTimeout(() => {
           if (navDone) return;
           showDrop();
         }, CFG.DROP_AT_MS);
 
-        // przejście po zakończeniu audio
         audio.addEventListener("ended", () => {
           if (navDone) return;
           navDone = true;
@@ -177,7 +264,7 @@
           location.href = targetHref;
         });
       } catch {
-        // jak audio nie ruszy, fallback zrobi robotę
+        // fallback zrobi przejście
       }
     },
     true
