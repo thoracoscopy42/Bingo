@@ -74,31 +74,37 @@
     const badgeShuffle = document.getElementById("badgeShuffle");
 
     const audioRerollId = (cfg.audio && cfg.audio.rerollId) || "rerollSound";
-    const catGifWrap = document.getElementById("catGifWrap");
     const rerollAudio = document.getElementById(audioRerollId);
 
-    // ===== CAT GIF helpers =====
-    function showCatGif() {
-      if (catGifWrap) catGifWrap.hidden = false;
-    }
-    function hideCatGif() {
-      if (catGifWrap) catGifWrap.hidden = true;
+    let active = 0;
+
+    // === CAT overlay: bierz z aktywnego boarda (.catGifWrap wewnątrz .raffle-grid) ===
+    function getActiveCatWrap() {
+      const board = boards[active];
+      return board ? board.querySelector(".catGifWrap") : null;
     }
 
-    // chowaj GIF po zakończeniu dźwięku
+    function showCatGif() {
+      const el = getActiveCatWrap();
+      if (el) el.hidden = false;
+    }
+
+    function hideCatGif() {
+      const el = getActiveCatWrap();
+      if (el) el.hidden = true;
+    }
+
+    // chowaj kota po końcu dźwięku (zawsze dla aktualnie aktywnego boarda)
     if (rerollAudio) {
-      rerollAudio.addEventListener("ended", hideCatGif);
-      // awaryjnie: jeśli audio przerwane
-      rerollAudio.addEventListener("pause", () => {
-        try {
-          if (rerollAudio.currentTime > 0 && rerollAudio.currentTime < rerollAudio.duration) {
-            hideCatGif();
-          }
-        } catch {}
+      rerollAudio.addEventListener("ended", () => {
+        hideCatGif();
       });
     }
 
-    let active = 0;
+    // ukryj wszystkie koty na starcie (żeby na 100% nic nie mrugnęło)
+    function hideAllCats() {
+      document.querySelectorAll(".catGifWrap").forEach(el => { el.hidden = true; });
+    }
 
     function applyClasses() {
       if (!boards.length) return;
@@ -147,6 +153,8 @@
       if (!boards.length) return;
       active = (n + boards.length) % boards.length;
       applyClasses();
+      // zmiana aktywnego boarda: niech kot nie zostaje na innym
+      hideAllCats();
     }
 
     // NAV
@@ -156,7 +164,7 @@
     // INIT
     applyClasses();
     updateBadges();
-    hideCatGif(); // na wszelki wypadek
+    hideAllCats();
 
     // ===== SHUFFLE (backend limit + animacja) =====
     if (btnShuffle) {
@@ -247,20 +255,17 @@
       });
     }
 
-    // ===== REROLL (backend + podmiana tekstów + CAT GIF) =====
+    // ===== REROLL (backend + podmiana tekstów + CAT overlay) =====
     if (btnReroll) {
       btnReroll.addEventListener("click", async () => {
         if (btnReroll.disabled) return;
 
-        // pokaż kota i odpal dźwięk
+        // zawsze schowaj wszystkie i pokaż tylko na aktywnym
+        hideAllCats();
         showCatGif();
-        const played = playAudioById(audioRerollId);
 
-        // jeśli audio nie odpaliło (autoplay), to i tak niech gif nie wisi bez sensu
-        if (!played) {
-          // zostaw na chwilę “efekt”, ale schowaj szybko
-          setTimeout(hideCatGif, 700);
-        }
+        // odpal dźwięk (kot znika dopiero na 'ended')
+        playAudioById(audioRerollId);
 
         const board = boards[active];
         const gridEl = board ? board.querySelector(".raffle-grid") : null;
@@ -283,8 +288,8 @@
           if (!data.ok) {
             showToast?.(data.error || "Reroll blocked", "error", 2200);
             applyLeftFromResponse(data);
-            // na błędzie też schowaj
-            hideCatGif();
+            // na błędzie schowaj (żeby nie wisiało)
+            hideAllCats();
             return;
           }
 
@@ -303,16 +308,14 @@
         } catch (e) {
           console.error(e);
           showToast?.("Błąd reroll (network)", "error", 2200);
-          hideCatGif();
+          hideAllCats();
         } finally {
           setTimeout(() => {
             if (gridEl) gridEl.classList.remove("is-rerolling");
           }, 260);
 
-          // jeśli audio z jakiegoś powodu nie wywoła ended, niech gif nie wisi
-          setTimeout(hideCatGif, 3500);
-
           updateBadges();
+          // UWAGA: nie chowamy kota tutaj — tylko po 'ended'
         }
       });
     }

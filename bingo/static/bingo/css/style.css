@@ -854,16 +854,37 @@ body::after{
 /* .grid-table td:has(.plugin-placeholder){
   background: transparent !important; 
   } */
-.raffle-gif-wrap {
-  display: flex;
-  justify-content: center;
-  margin: 10px 0 14px;
+.raffle-grid{
+  position: relative;
 }
 
-.raffle-gif {
-  max-width: 220px;
-  width: 45vw;
+/* overlay kota – domyślnie hidden, więc NIE zajmuje miejsca */
+.raffle-gif-wrap{
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+
+  display: grid;
+  place-items: center;
+
+  background: rgba(0,0,0,.35);
+  backdrop-filter: blur(2px);
+
+  /* jeśli chcesz, żeby overlay NIE blokował klików w grid (opcjonalnie) */
+  pointer-events: none;
+}
+
+/* hidden = totalnie niewidoczny (zero miejsca) */
+.raffle-gif-wrap[hidden]{
+  display: none !important;
+}
+
+/* sam gif */
+.raffle-gif{
+  width: min(340px, 72%);
   height: auto;
-  border-radius: 14px;
-}
+  border-radius: 16px;
 
+  box-shadow: 0 18px 55px rgba(0,0,0,.55);
+  border: 1px solid rgba(255,255,255,.14);
+}
