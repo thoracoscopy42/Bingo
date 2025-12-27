@@ -12,11 +12,11 @@
     SFX_UNLOCK_URL: "/static/bingo/sfx/Drymastero103/tung.mp3",
 
     BG_VOLUME: 0.35,
-    SFX_VOLUME: 0.85,
+    SFX_VOLUME: 0.50,
 
     GAP_PX: 14,
-    EGG_W: 120,
-    EGG_H: 120,
+    EGG_W: 367,
+    EGG_H: 367,
   };
 
   function clamp01(x) {
@@ -282,7 +282,7 @@ textarea.grid-cell.dry-locked,
           playOneShot();
           lockCenter4(false);
 
-          showMsg("Odblokowano środek. Masz 5 sekund zanim obraz zniknie.");
+          showMsg("Widziałem jak coś ci ukradł - trzymaj !");
 
           if (msgTimer) clearTimeout(msgTimer);
           msgTimer = ctx.setTimeoutSafe(() => {
