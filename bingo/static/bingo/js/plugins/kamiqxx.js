@@ -35,6 +35,7 @@
       "/static/bingo/images/kamiqxx/goodboy2.jpg",
       "/static/bingo/images/kamiqxx/goodboy3.jpg",
       "/static/bingo/images/kamiqxx/goodboy4.jpg",
+      "/static/bingo/images/kamiqxx/goodboy5.jpg",
     ],
 
     BAD_IMGS: [
@@ -43,6 +44,9 @@
       "/static/bingo/images/kamiqxx/badboy3.jpg",
       "/static/bingo/images/kamiqxx/badboy4.jpg",
       "/static/bingo/images/kamiqxx/badboy5.jpg",
+      "/static/bingo/images/kamiqxx/badboy6.jpg",
+      "/static/bingo/images/kamiqxx/badboy7.jpg",
+      "/static/bingo/images/kamiqxx/badboy8.jpg",
     ],
 
 
