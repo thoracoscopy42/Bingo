@@ -11,9 +11,9 @@
 
     // UI
     TITLE: "Weryfikacja dostępu",
-    SUBTITLE: "Rozwiąż szybkie zadanie, żeby wrócić na stronę",
+    SUBTITLE: "",
     OK: "OK",
-    ERROR: "Spróbuj jeszcze raz",
+    ERROR: "No chyba sobie żartujesz",
 
     // AUDIO (placeholder – podepniesz w sfx)
     // w python config: sfx={ "bg_music": [static("...mp3")] }
@@ -112,6 +112,26 @@
     return a;
   }
 
+  function shuffleInPlace(a){
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  let badImgsForTiles = [];
+  if (badPool.length >= 8) {
+    shuffleInPlace(badPool);
+    badImgsForTiles = badPool.slice(0, 8);
+  } else {
+    badImgsForTiles = badPool.slice();
+    while (badImgsForTiles.length < 8) {
+      badImgsForTiles.push(pickOne(badPool)); // dobierz losowo, mogą być powtórki
+    }
+    shuffleInPlace(badImgsForTiles);
+  }
+
   function permuteSudoku4(solution) {
     // prosta permutacja cyfr 1..4 + swap wierszy w obrębie bandów + swap kolumn w obrębie stacków
     const map = shuffle([1,2,3,4]);
@@ -145,12 +165,16 @@
 
   // ===== renderers =====
   function renderFindBoy(modal, { onSuccess, setMsg }) {
-    const hint = document.createElement("div");
-    hint.style.marginTop = "6px";
-    hint.style.fontSize = "13px";
-    hint.style.opacity = "0.85";
-    hint.textContent = "Znajdź grzecznego chłopca (tylko 1 kafelek jest poprawny).";
-    modal.appendChild(hint);
+    const title = document.createElement("div");
+    title.className = "kys-mode-title";
+    title.textContent = "ZNAJDŹ GRZECZNEGO CHŁOPCA";
+    modal.appendChild(title);
+
+    const fine = document.createElement("div");
+    fine.className = "kys-fine";
+    fine.textContent = "jest tylko jeden grzeczny chłopiec";
+    modal.appendChild(fine);
+
 
     const grid = document.createElement("div");
     grid.style.display = "grid";
@@ -163,6 +187,13 @@
 
     const goodIndex = (Math.random() * 9) | 0;
 
+    const pickOne = (arr) => arr[(Math.random() * arr.length) | 0];
+    
+    const goodImg = pickOne(CFG.GOOD_IMGS);
+
+    let badPool = CFG.BAD_IMGS.slice();
+
+
     for (let i = 0; i < 9; i++) {
       const tile = document.createElement("button");
       tile.type = "button";
@@ -170,10 +201,15 @@
       tile.textContent = "";
 
       const img = document.createElement("img");
-      img.src = (i === goodIndex)
-        ? CFG.GOOD_IMG
-        : CFG.BAD_IMGS[(Math.random() * CFG.BAD_IMGS.length) | 0];
-        tile.style.setProperty("--kys-img", `url("${img.src}")`);
+      if (i === goodIndex) {
+        img.src = goodImg;
+      } else {
+        // pobierz kolejnego bada z listy 8 sztuk
+        img.src = badImgsForTiles.pop();
+      }
+
+      tile.style.setProperty("--kys-img", `url("${img.src}")`);
+
 
 
       img.alt = (i === goodIndex) ? "good boy" : "bad boy";
@@ -476,6 +512,22 @@
   font-weight: 900;
   opacity: .95;
   font-size: 16px;
+
+.kys-mode-title{
+  margin-top: 10px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 950;
+  letter-spacing: .6px;
+}
+
+.kys-fine{
+  margin-top: 6px;
+  text-align: center;
+  font-size: 13px;
+  opacity: .75;
+}
+
 }`;
         document.head.appendChild(style);
 
@@ -517,15 +569,15 @@
           h.className = "kys-title";
           h.textContent = CFG.TITLE;
 
-          const s = document.createElement("p");
-          s.className = "kys-sub";
-          s.textContent = CFG.SUBTITLE;
+          // const s = document.createElement("p");
+          // s.className = "kys-sub";
+          // s.textContent = CFG.SUBTITLE;
 
           msg = document.createElement("div");
           msg.className = "kys-msg";
 
           modal.appendChild(h);
-          modal.appendChild(s);
+          // modal.appendChild(s);
 
           // PASS handler
           function passGate() {
