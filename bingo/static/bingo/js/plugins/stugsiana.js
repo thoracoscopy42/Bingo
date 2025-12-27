@@ -285,13 +285,15 @@
         // ===== audio + bouncer =====
         const loopAudio = createLoopAudio();
         const bouncers = createBouncerLayer(ctx);
-        const savedCount = Number(localStorage.getItem(LOGO_COUNT_KEY) || 0);
+        const gateState = loadState(); // { passed: true/false }
+        const savedCount = gateState.passed
+        ? Number(localStorage.getItem(LOGO_COUNT_KEY) || 0)
+         : 0;
 
         for (let i = 0; i < savedCount; i++) {
         bouncers.spawn();
         }
 
-bouncers.start();
         bouncers.start();
 
         // spawn kolejnego logo przy pierwszym wypełnieniu komórki
