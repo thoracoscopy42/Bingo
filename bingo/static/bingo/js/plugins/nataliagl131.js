@@ -10,12 +10,13 @@
   }
 
   const CFG = {
-    IDLE_MS: 500,         // po ilu ms bez klawisza uznajemy "koniec pisania"
-    MAX_ON_SCREEN: 8,     // max obrazków naraz
-    SCALE_MIN: 0.45,
-    SCALE_MAX: 1.05,
-    OPACITY: 0.95,
+    IDLE_MS: 500,         
+    MAX_ON_SCREEN: 8,     
+    SCALE_MIN: 0.26,
+    SCALE_MAX: 0.37,
+    OPACITY: 0.55,
   };
+
 
   const ASSETS = {
     images: [
@@ -31,7 +32,17 @@
   };
 
   function rand(min, max) { return min + Math.random() * (max - min); }
-  function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+
+  // losowa próbka BEZ powtórek
+  function sampleUnique(arr, n) {
+    // Fisher–Yates na kopii + utnij
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a.slice(0, Math.max(0, Math.min(n, a.length)));
+  }
 
   function isTypingTarget(el) {
     if (!el) return false;
@@ -47,7 +58,6 @@
         const root = document.getElementById("plugin-root");
         if (!root) return;
 
-        // ===== styles =====
         const style = document.createElement("style");
         style.textContent = `
 #plugin-root { position: relative; z-index: 2147483000; }
@@ -78,11 +88,29 @@
 
         // ===== state =====
         let idleTimer = null;
-        let iter = 0;        // liczba "oderwań" od klawiatury
+        let iter = 0;        // liczba "oderwań"
         let isOn = false;
 
-        // trzymamy referencje do obrazków, żeby tylko je pokazywać/ukrywać
         const imgs = [];
+
+        // tu trzymamy "pulę na iterację"
+        let selectedPool = [];
+
+        function countForIter(it) {
+          return Math.min(CFG.MAX_ON_SCREEN, Math.max(1, it + 1));
+        }
+
+        function refreshSelectedPool() {
+          const count = countForIter(iter);
+
+          // jeśli dobijamy do max (albo count >= liczby assetów),
+          // to bierzemy WSZYSTKIE (bez losowania z 8)
+          if (count >= ASSETS.images.length) {
+            selectedPool = ASSETS.images.slice(); // wszystkie, w stałej kolejności
+          } else {
+            selectedPool = sampleUnique(ASSETS.images, count); // losowo, ale bez powtórek
+          }
+        }
 
         function placeRandomly(el) {
           const pad = 18;
@@ -103,10 +131,7 @@
             const img = document.createElement("img");
             img.className = "ast-img";
             img.alt = "";
-            img.onerror = () => {
-              // jak obrazek się nie wczyta, chowamy go żeby nie wisiał "pusty"
-              img.classList.remove("is-on");
-            };
+            img.onerror = () => img.classList.remove("is-on");
             imgs.push(img);
             layer.appendChild(img);
           }
@@ -115,28 +140,25 @@
         function showWave() {
           if (!ASSETS.images.length) return;
 
-          // iter rośnie przy "oderwaniu", więc w trakcie pisania pokazujemy iter+1
-          const count = Math.min(CFG.MAX_ON_SCREEN, Math.max(1, iter + 1));
+          const count = countForIter(iter);
           ensurePoolSize(count);
 
-          // pokazujemy dokładnie `count` obrazków
-          for (let i = 0; i < count; i++) {
-            const img = imgs[i];
+          // przy pierwszym show po przerwie ustawiamy źródła
+          // zgodnie z WYLOSOWANĄ pulą na iterację
+          if (!isOn) {
+            // bezpieczeństwo: gdyby ktoś zmienił ASSETS.images w locie
+            if (!selectedPool.length) refreshSelectedPool();
 
-            // przy pierwszym show po przerwie losujemy nowe gify i pozycje
-            // (żeby nie migało przy każdym keydown)
-            if (!isOn) {
-              img.src = pick(ASSETS.images);
+            for (let i = 0; i < count; i++) {
+              const img = imgs[i];
+              // selectedPool ma długość count, a przy "max" ma długość 8 (wszystkie)
+              img.src = selectedPool[i];
               placeRandomly(img);
             }
-
-            img.classList.add("is-on");
           }
 
-          // resztę (jeśli pool większy z poprzednich fal) chowamy
-          for (let i = count; i < imgs.length; i++) {
-            imgs[i].classList.remove("is-on");
-          }
+          for (let i = 0; i < count; i++) imgs[i].classList.add("is-on");
+          for (let i = count; i < imgs.length; i++) imgs[i].classList.remove("is-on");
 
           isOn = true;
         }
@@ -147,8 +169,11 @@
           for (const img of imgs) img.classList.remove("is-on");
           isOn = false;
 
-          // to jest "oderwanie" → eskalacja na następną falę
+          // "oderwanie" → eskalacja
           iter = Math.min(CFG.MAX_ON_SCREEN - 1, iter + 1);
+
+          // po zmianie iteracji losujemy NOWĄ pulę na następną sesję pisania
+          refreshSelectedPool();
         }
 
         function scheduleHide() {
@@ -159,18 +184,19 @@
           }, CFG.IDLE_MS);
         }
 
+        // startowa pula dla iter=0
+        refreshSelectedPool();
+
         // ===== events =====
         ctx.on(document, "keydown", (e) => {
           if (e.ctrlKey || e.metaKey || e.altKey) return;
-
           const ae = document.activeElement;
           if (!isTypingTarget(ae)) return;
 
-          showWave();     // pokazuj podczas pisania
-          scheduleHide(); // a po przerwie zgaś + podbij iter
+          showWave();
+          scheduleHide();
         });
 
-        // input łapie też wklejanie, autouzupełnianie itd.
         ctx.on(document, "input", () => {
           const ae = document.activeElement;
           if (!isTypingTarget(ae)) return;
@@ -179,7 +205,6 @@
           scheduleHide();
         });
 
-        // klik poza input: natychmiast chowamy, ale NIE liczymy jako "oderwanie od klawiatury"
         ctx.on(document, "pointerdown", () => {
           const ae = document.activeElement;
           if (!isTypingTarget(ae)) {
@@ -189,7 +214,6 @@
           if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
         });
 
-        // jak karta znika, chowamy (bez eskalacji)
         ctx.on(document, "visibilitychange", () => {
           if (document.hidden) {
             for (const img of imgs) img.classList.remove("is-on");
