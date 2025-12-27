@@ -33,6 +33,7 @@
   
   const LOGO_COUNT_KEY = "bingo_stugsiana_logo_count_v1";
   let slideCatPlaying = false;
+  let slideAudioCtx = null;
 
   function whenRuntime(fn) {
     if (window.BingoPluginRuntime?.initUserPlugin) return fn();
@@ -338,6 +339,10 @@
         }
 
         function pass() {
+            if (!slideAudioCtx) {
+            slideAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            slideAudioCtx.resume().catch(() => {});
+            }
           saveState({ passed: true });
           close();
           startAudioSafe();
@@ -491,11 +496,30 @@
     currentSfx = null;
   }
 
-  const sfx = new Audio(CFG.SLIDE_CAT_SOUND);
-  sfx.preload = "auto";
-  sfx.volume = CFG.SLIDE_CAT_VOLUME;
-  sfx.currentTime = 0;
-  currentSfx = sfx;
+// zakładamy, że slideAudioCtx został odblokowany po kliknięciu użytkownika
+fetch(CFG.SLIDE_CAT_SOUND)
+  .then(r => r.arrayBuffer())
+  .then(buf => slideAudioCtx.decodeAudioData(buf))
+  .then(decoded => {
+    const src = slideAudioCtx.createBufferSource();
+    const gain = slideAudioCtx.createGain();
+
+    gain.gain.value = CFG.SLIDE_CAT_VOLUME;
+
+    src.buffer = decoded;
+    src.connect(gain).connect(slideAudioCtx.destination);
+
+    src.onended = () => {
+      // wyjazd kota DOPIERO po pełnym dźwięku
+      el.style.transform = `translateX(${fromLeft ? "-100%" : "100%"})`;
+      ctx.setTimeoutSafe(() => {
+        el.style.display = "none";
+        cleanup();
+      }, 1800);
+    };
+
+    src.start(0);
+  });
 
   const cleanup = () => {
   if (currentSfx === sfx) currentSfx = null;
