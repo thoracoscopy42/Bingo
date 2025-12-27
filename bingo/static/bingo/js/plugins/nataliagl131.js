@@ -22,11 +22,11 @@
       "/static/bingo/images/nataliagl131/astarion1.gif",
       "/static/bingo/images/nataliagl131/astarion2.gif",
       "/static/bingo/images/nataliagl131/astarion3.gif",
-      "/static/bingo/images/nataliagl131/astarion4.gif",
+      "/static/bingo/images/nataliagl131/astarion4.jpg",
       "/static/bingo/images/nataliagl131/astarion5.gif",
       "/static/bingo/images/nataliagl131/astarion6.gif",
-      "/static/bingo/images/nataliagl131/astarion7.gif",
-      "/static/bingo/images/nataliagl131/astarion8.gif",
+      "/static/bingo/images/nataliagl131/happy_puppy2.gif",
+      "/static/bingo/images/nataliagl131/piesek.jpg",
     ],
   };
 
