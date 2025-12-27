@@ -1,36 +1,38 @@
 (() => {
   const CFG = {
-    // gdzie są obrazki
     BG_IMGS: [
       "/static/bingo/images/jull/bgkotek1.jpg",
       "/static/bingo/images/jull/bgkotek2.jpg",
       "/static/bingo/images/jull/bgkotek3.jpg",
-      // future: dopisuj kolejne bgkotek*.jpg
     ],
     HAPPY_CAT: "/static/bingo/images/jull/happycat.jpg",
     SAD_CAT: "/static/bingo/images/jull/sadcat.jpg",
 
     // tło – układ
-    ROWS: 6,                  // liczba rzędów kotków
-    TILE_H: 160,              // wysokość kafla (px)
-    TILE_GAP: 14,             // odstęp między kotkami
-    SPEED_MIN: 18,            // sekundy (wolniej)
-    SPEED_MAX: 36,            // sekundy (szybciej)
+    ROWS: 6,
+    TILE_H: 160,
+    TILE_GAP: 14,
+    SPEED_MIN: 18,
+    SPEED_MAX: 36,
+    BG_OPACITY: 0.20,         // << mniej agresywne tło
 
     // minigierka – tlen
-    OXY_MAX: 1.0,
     OXY_START: 0.65,
-    OXY_DECAY_PER_SEC: 0.055, // spadek / sek
-    OXY_PUMP_ADD: 0.22,       // ile dodaje pompnięcie
-    OXY_PUMP_CD_MS: 180,      // minimalny odstęp między pompnięciami
+    OXY_DECAY_PER_SEC: 0.055,
+    OXY_PUMP_ADD: 0.22,
+    OXY_PUMP_CD_MS: 180,
 
-    // progi nastroju
-    SAD_THRESHOLD: 0.30,      // poniżej = smutny
-    FADE_MS: 280,             // crossfade kotka
+    SAD_THRESHOLD: 0.30,
+    FADE_MS: 280,
 
-    // UI
+    // panel
     PANEL_W: 240,
-    PANEL_H: 180,             // trochę wyżej, bo dodajemy guzik
+    PANEL_H: 180,
+    PANEL_MARGIN: 18,         // odstęp od krawędzi ekranu
+    PANEL_SAFE_GAP: 10,       // minimalny dystans od elementów inputowych
+
+    // ile prób "ucieczki" panelu w górę zanim odpuścimy
+    AVOID_MAX_STEPS: 14,
   };
 
   function clamp01(x) { return Math.max(0, Math.min(1, x)); }
@@ -47,7 +49,6 @@
     }, 40);
   }
 
-  // tworzy tyle kafli, żeby spokojnie wypełnić 2x szerokość (do płynnego przesuwu)
   function fillRow(track, rowW, tileW) {
     const need = Math.ceil((rowW * 2) / Math.max(1, tileW)) + 2;
     for (let i = 0; i < need; i++) {
@@ -58,6 +59,21 @@
       img.loading = "lazy";
       track.appendChild(img);
     }
+  }
+
+  function rectsOverlap(a, b) {
+    return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+  }
+
+  function expandedRect(r, pad) {
+    return {
+      left: r.left - pad,
+      top: r.top - pad,
+      right: r.right + pad,
+      bottom: r.bottom + pad,
+      width: r.width + pad * 2,
+      height: r.height + pad * 2,
+    };
   }
 
   whenRuntime(() => {
@@ -73,17 +89,17 @@
         // ===== style =====
         const style = document.createElement("style");
         style.textContent = `
-/* plugin nie ma dominować strony */
-#plugin-root { position: relative; z-index: 0; }
-
-/* tło dekoracyjne POD grą */
-.jull-wrap{
+/* U was #plugin-root jest globalnie fixed + z-index:9999, więc tu robimy:
+   - tło kotków: bardzo subtelne, pointer-events none
+   - panel gry: klikalny
+   - podbijamy z-index głównego UI (panel/hero/page), żeby nie wyglądało jakby kotki były "nad" */
+.jull-bgwrap{
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: 1;                 /* poniżej UI, ale pamiętaj: #plugin-root jest 9999, więc i tak to "nad" body,
+                                dlatego równoważymy to podbiciem UI (poniżej) */
+  pointer-events: none;
   overflow: hidden;
-  background: #000;
-  pointer-events: none;           /* nie blokuje UI gry */
 }
 
 .jull-bg{
@@ -94,8 +110,9 @@
   gap: ${CFG.TILE_GAP}px;
   padding: ${CFG.TILE_GAP}px;
   box-sizing: border-box;
-  opacity: .35;                   /* delikatnie */
+  opacity: ${CFG.BG_OPACITY};
   pointer-events: none;
+  filter: saturate(1.05) contrast(1.03);
 }
 
 .jull-row{
@@ -123,11 +140,9 @@
   object-fit: cover;
   user-select: none;
   pointer-events: none;
-  filter: saturate(1.05) contrast(1.02);
   box-shadow: 0 10px 30px rgba(0,0,0,.25);
 }
 
-/* animacja przesuwu */
 @keyframes jull-marquee {
   0%   { transform: translateX(0); }
   100% { transform: translateX(calc(-50% - (${CFG.TILE_GAP}px / 2))); }
@@ -136,28 +151,22 @@
 .jull-track.anim{
   animation: jull-marquee var(--jullDur, 26s) linear infinite;
 }
+.jull-track.reverse{ animation-direction: reverse; }
 
-.jull-track.reverse{
-  animation-direction: reverse;
-}
-
-/* panel minigry — prawy dolny róg */
+/* panel minigry */
 .jull-panel{
   position: fixed;
-  right: 18px;
-  bottom: 18px;
-  left: auto;
-  top: auto;
-  transform: none;
+  right: ${CFG.PANEL_MARGIN}px;
+  bottom: ${CFG.PANEL_MARGIN}px;
 
   width: ${CFG.PANEL_W}px;
   height: ${CFG.PANEL_H}px;
 
-  z-index: 3;                     /* nad tłem */
-  pointer-events: auto;           /* panel klikalny */
+  z-index: 10000;             /* trzyma się nad UI, ale nie blokuje poza swoim obszarem */
+  pointer-events: auto;
 
   border-radius: 18px;
-  background: rgba(0,0,0,.78);
+  background: rgba(0,0,0,.72);
   outline: 1px solid rgba(255,255,255,.14);
   box-shadow: 0 20px 60px rgba(0,0,0,.45);
   display: grid;
@@ -227,17 +236,41 @@
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
 }
 .jull-pumpbtn:active{ transform: translateY(1px); }
+
+/* delikatny "glass" na panelu strony, żeby kotki nie kłuły w oczy – tylko jeśli plugin-root jest nad wszystkim */
+.jull-ui-raise{
+  position: relative !important;
+  z-index: 5000 !important;
+}
 `;
         document.head.appendChild(style);
 
-        // ===== DOM =====
-        const wrap = document.createElement("div");
-        wrap.className = "jull-wrap";
+        // ===== podbij UI nad tło (bez grzebania w globalnym css) =====
+        // (wystarczy, że panel/hero/page będzie wyżej niż jull-bgwrap)
+        const raised = [];
+        function raiseUI() {
+          const els = [
+            document.querySelector(".page"),
+            document.querySelector(".hero"),
+            document.querySelector(".panel"),
+            document.querySelector(".panel--wide"),
+          ].filter(Boolean);
+
+          els.forEach(el => {
+            if (el.classList.contains("jull-ui-raise")) return;
+            el.classList.add("jull-ui-raise");
+            raised.push(el);
+          });
+        }
+        raiseUI();
+
+        // ===== DOM: tło =====
+        const bgwrap = document.createElement("div");
+        bgwrap.className = "jull-bgwrap";
 
         const bg = document.createElement("div");
         bg.className = "jull-bg";
 
-        // rows
         const rowEls = [];
         for (let r = 0; r < CFG.ROWS; r++) {
           const row = document.createElement("div");
@@ -246,15 +279,17 @@
           const track = document.createElement("div");
           track.className = "jull-track anim";
           if (r % 2 === 1) track.classList.add("reverse");
-
           track.style.setProperty("--jullDur", `${rand(CFG.SPEED_MIN, CFG.SPEED_MAX).toFixed(2)}s`);
 
           row.appendChild(track);
           bg.appendChild(row);
-          rowEls.push({ row, track });
+          rowEls.push({ track });
         }
 
-        // panel
+        bgwrap.appendChild(bg);
+        root.appendChild(bgwrap);
+
+        // ===== DOM: panel =====
         const panel = document.createElement("div");
         panel.className = "jull-panel";
 
@@ -283,7 +318,7 @@
 
         const hint = document.createElement("div");
         hint.className = "jull-hint";
-        hint.innerHTML = `Pompkuj tlen: <strong>klik</strong> / <strong>SPACJA</strong> / <strong>ENTER</strong> (gdy najedziesz na panel)`;
+        hint.innerHTML = `Pompkuj tlen: <strong>klik</strong> / <strong>SPACJA</strong> / <strong>ENTER</strong>`;
 
         const btn = document.createElement("button");
         btn.type = "button";
@@ -295,14 +330,11 @@
         panel.appendChild(oxy);
         panel.appendChild(hint);
         panel.appendChild(btn);
+        root.appendChild(panel);
 
-        wrap.appendChild(bg);
-        root.appendChild(wrap);
-        root.appendChild(panel); // panel osobno, bo ma pointer-events i z-index
-
-        // ===== layout fill =====
+        // ===== layout fill (marquee) =====
         function layoutFill() {
-          const rowW = wrap.clientWidth || window.innerWidth || 1200;
+          const rowW = (window.innerWidth || 1200);
           const tileW = (CFG.TILE_H * 1.35) + CFG.TILE_GAP;
 
           rowEls.forEach(({ track }) => {
@@ -310,15 +342,72 @@
 
             fillRow(track, rowW, tileW);
 
-            // kopiujemy obrazki jeszcze raz do tego samego tracka, żeby -50% było płynne
             const imgs = Array.from(track.querySelectorAll("img"));
             imgs.forEach(img => track.appendChild(img.cloneNode(true)));
 
             track.__filled = true;
           });
         }
-
         layoutFill();
+
+        // ===== panel avoidance (żeby nie zasłaniać inputów) =====
+        function avoidInputs() {
+          // wszystko co faktycznie jest "do klikania/pisania"
+          const blockers = Array.from(document.querySelectorAll(
+            ".grid-table, .panel, .cell-wrapper, textarea.grid-cell, .cd__button, .cd__list"
+          ));
+
+          if (!blockers.length) return;
+
+          // reset do domyślnej pozycji
+          panel.style.right = `${CFG.PANEL_MARGIN}px`;
+          panel.style.bottom = `${CFG.PANEL_MARGIN}px`;
+          panel.style.top = "auto";
+          panel.style.left = "auto";
+
+          // iteracyjnie podnoś panel, aż przestanie nachodzić
+          let steps = 0;
+          while (steps < CFG.AVOID_MAX_STEPS) {
+            const pr = expandedRect(panel.getBoundingClientRect(), CFG.PANEL_SAFE_GAP);
+
+            let worst = null;
+            for (const el of blockers) {
+              const r = el.getBoundingClientRect();
+              if (r.width <= 0 || r.height <= 0) continue;
+              const rr = expandedRect(r, CFG.PANEL_SAFE_GAP);
+
+              if (rectsOverlap(pr, rr)) {
+                // ile musimy podnieść panel do góry, żeby nie nachodził
+                const pushUp = pr.bottom - rr.top;
+                if (!worst || pushUp > worst) worst = pushUp;
+              }
+            }
+
+            if (!worst) break; // ok, nie nachodzi
+
+            const curBottom = parseFloat(panel.style.bottom || `${CFG.PANEL_MARGIN}`) || CFG.PANEL_MARGIN;
+            panel.style.bottom = `${curBottom + Math.ceil(worst) + 6}px`;
+            steps++;
+          }
+
+          // nie pozwól uciec poza ekran
+          const final = panel.getBoundingClientRect();
+          if (final.top < 8) {
+            panel.style.bottom = `${Math.max(CFG.PANEL_MARGIN, (window.innerHeight - final.height - 8))}px`;
+          }
+        }
+
+        // odpal po renderze, i jeszcze raz po chwili (bo layout może się "doustawiać")
+        requestAnimationFrame(() => {
+          avoidInputs();
+          setTimeout(avoidInputs, 300);
+          setTimeout(avoidInputs, 900);
+        });
+
+        ctx.on(window, "resize", () => {
+          layoutFill();
+          avoidInputs();
+        });
 
         // ===== minigame logic =====
         let oxyVal = clamp01(CFG.OXY_START);
@@ -364,11 +453,10 @@
         setMood();
         raf = requestAnimationFrame(tick);
 
-        // input: tylko panel (nie blokuje gry) + klawiatura tylko gdy panel "uzbrojony"
+        // input: panel click + klawiatura tylko gdy kursor nad panelem
         let armed = false;
 
         ctx.on(panel, "pointerdown", (e) => { e.preventDefault(); pump(); }, { passive: false });
-
         ctx.on(panel, "mouseenter", () => { armed = true; });
         ctx.on(panel, "mouseleave", () => { armed = false; });
         ctx.on(panel, "focusin", () => { armed = true; });
@@ -387,8 +475,9 @@
         return () => {
           try { if (raf) cancelAnimationFrame(raf); } catch {}
           try { panel.remove(); } catch {}
-          try { wrap.remove(); } catch {}
+          try { bgwrap.remove(); } catch {}
           try { style.remove(); } catch {}
+          try { raised.forEach(el => el.classList.remove("jull-ui-raise")); } catch {}
         };
       }
     };
