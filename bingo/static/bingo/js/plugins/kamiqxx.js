@@ -514,8 +514,12 @@
           audioUnlocked = true;
           fadeTo(Number(CFG.BG_VOL ?? 0.35), Number(CFG.BG_FADE_MS ?? 700));
           startSavingPosition();
-          resume = null; // po pierwszym poprawnym starcie kasujemy tryb wznowienia
+          resume = null;
         }).catch(() => {});
+      }
+      return true;
+      }
+
 
 
     function startAmbientAudio() {
