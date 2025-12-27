@@ -76,20 +76,38 @@
   }
 
   function lockCenter4(locked) {
-    const center = getCenter4Textareas();
-    center.forEach((ta) => {
-      ta.disabled = !!locked;
-      ta.classList.toggle("dry-locked", !!locked);
-      const wrap = ta.closest(".cell-wrapper");
-      if (wrap) wrap.classList.toggle("dry-locked", !!locked);
-    });
-  }
+  const center = getCenter4Textareas();
+
+  center.forEach((ta) => {
+    const wrap = ta.closest(".cell-wrapper");
+    if (!wrap) return;
+
+    if (locked) {
+      ta.disabled = true;
+      wrap.classList.add("dry-hidden");
+    } else {
+      ta.disabled = false;
+      wrap.classList.remove("dry-hidden");
+      ta.classList.remove("dry-locked");
+      wrap.classList.remove("dry-locked");
+    }
+  });
+}
 
   whenRuntime(() => {
     window.BingoUserPlugin = {
       init(api) {
         const { ctx, sfx } = api;
         const root = document.getElementById("plugin-root");
+        const overlay = document.createElement("div");
+        overlay.style.position = "fixed";
+        overlay.style.left = "0";
+        overlay.style.top = "0";
+        overlay.style.width = "100vw";
+        overlay.style.height = "100vh";
+        overlay.style.zIndex = "2147483647";
+        overlay.style.pointerEvents = "none"; // overlay nie blokuje strony
+        document.body.appendChild(overlay);
         if (!root) return;
 
         // bierz audio z user_plugins.py jeśli jest
@@ -195,7 +213,7 @@ textarea.grid-cell.dry-locked,
           if (!msgEl) {
             msgEl = document.createElement("div");
             msgEl.className = "dry-msg";
-            root.appendChild(msgEl);
+            overlay.appendChild(msgEl);
           }
           msgEl.textContent = text;
           positionMsg();
@@ -225,8 +243,8 @@ textarea.grid-cell.dry-locked,
         }
 
         if (!st.unlocked) {
-          if (!st.rightClicked) root.appendChild(eggRight);
-          root.appendChild(eggLeft);
+          if (!st.rightClicked) overlay.appendChild(eggRight);
+          overlay.appendChild(eggLeft);
 
           positionEggs();
           ctx.on(window, "resize", positionEggs);
@@ -285,6 +303,7 @@ textarea.grid-cell.dry-locked,
           try { if (msgEl) msgEl.remove(); } catch {}
           try { style.remove(); } catch {}
           try { if (bg) { bg.pause(); bg.currentTime = 0; } } catch {}
+          try { overlay.remove(); } catch {}
         };
       }
     };
