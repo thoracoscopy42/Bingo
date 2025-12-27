@@ -30,7 +30,7 @@
 
     // UI
     PANEL_W: 240,
-    PANEL_H: 160,
+    PANEL_H: 180,             // trochę wyżej, bo dodajemy guzik
   };
 
   function clamp01(x) { return Math.max(0, Math.min(1, x)); }
@@ -73,14 +73,17 @@
         // ===== style =====
         const style = document.createElement("style");
         style.textContent = `
-#plugin-root { position: relative; z-index: 2147483000; }
+/* plugin nie ma dominować strony */
+#plugin-root { position: relative; z-index: 0; }
 
+/* tło dekoracyjne POD grą */
 .jull-wrap{
   position: fixed;
   inset: 0;
-  z-index: 2147483646;
+  z-index: 0;
   overflow: hidden;
   background: #000;
+  pointer-events: none;           /* nie blokuje UI gry */
 }
 
 .jull-bg{
@@ -91,7 +94,8 @@
   gap: ${CFG.TILE_GAP}px;
   padding: ${CFG.TILE_GAP}px;
   box-sizing: border-box;
-  opacity: .98;
+  opacity: .35;                   /* delikatnie */
+  pointer-events: none;
 }
 
 .jull-row{
@@ -123,7 +127,7 @@
   box-shadow: 0 10px 30px rgba(0,0,0,.25);
 }
 
-/* animacja przesuwu – robimy ją przez zmienną --jullDur */
+/* animacja przesuwu */
 @keyframes jull-marquee {
   0%   { transform: translateX(0); }
   100% { transform: translateX(calc(-50% - (${CFG.TILE_GAP}px / 2))); }
@@ -137,20 +141,27 @@
   animation-direction: reverse;
 }
 
-/* panel minigry */
+/* panel minigry — prawy dolny róg */
 .jull-panel{
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%,-50%);
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  left: auto;
+  top: auto;
+  transform: none;
+
   width: ${CFG.PANEL_W}px;
   height: ${CFG.PANEL_H}px;
+
+  z-index: 3;                     /* nad tłem */
+  pointer-events: auto;           /* panel klikalny */
+
   border-radius: 18px;
-  background: rgba(0,0,0,.82);
+  background: rgba(0,0,0,.78);
   outline: 1px solid rgba(255,255,255,.14);
-  box-shadow: 0 30px 90px rgba(0,0,0,.65);
+  box-shadow: 0 20px 60px rgba(0,0,0,.45);
   display: grid;
-  grid-template-rows: 1fr auto auto;
+  grid-template-rows: 1fr auto auto auto;
   padding: 14px;
   box-sizing: border-box;
   gap: 10px;
@@ -204,6 +215,18 @@
 }
 
 .jull-hint strong{ color: #fff; }
+
+.jull-pumpbtn{
+  border: 0;
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-weight: 900;
+  cursor: pointer;
+  background: rgba(255,255,255,.92);
+  color: #111;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+}
+.jull-pumpbtn:active{ transform: translateY(1px); }
 `;
         document.head.appendChild(style);
 
@@ -222,9 +245,8 @@
 
           const track = document.createElement("div");
           track.className = "jull-track anim";
-          if (r % 2 === 1) track.classList.add("reverse"); // 2gi w lewo itd.
+          if (r % 2 === 1) track.classList.add("reverse");
 
-          // losowa prędkość na rząd
           track.style.setProperty("--jullDur", `${rand(CFG.SPEED_MIN, CFG.SPEED_MAX).toFixed(2)}s`);
 
           row.appendChild(track);
@@ -261,44 +283,42 @@
 
         const hint = document.createElement("div");
         hint.className = "jull-hint";
-        hint.innerHTML = `Pompkuj tlen: <strong>klik</strong> / <strong>SPACJA</strong> / <strong>ENTER</strong>`;
+        hint.innerHTML = `Pompkuj tlen: <strong>klik</strong> / <strong>SPACJA</strong> / <strong>ENTER</strong> (gdy najedziesz na panel)`;
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "jull-pumpbtn";
+        btn.textContent = "POMPUJ";
+        btn.addEventListener("click", (e) => { e.preventDefault(); pump(); });
 
         panel.appendChild(catbox);
         panel.appendChild(oxy);
         panel.appendChild(hint);
+        panel.appendChild(btn);
 
         wrap.appendChild(bg);
-        wrap.appendChild(panel);
         root.appendChild(wrap);
+        root.appendChild(panel); // panel osobno, bo ma pointer-events i z-index
 
         // ===== layout fill =====
         function layoutFill() {
           const rowW = wrap.clientWidth || window.innerWidth || 1200;
-          const tileW = (CFG.TILE_H * 1.35) + CFG.TILE_GAP; // orientacyjnie, bo width auto
+          const tileW = (CFG.TILE_H * 1.35) + CFG.TILE_GAP;
+
           rowEls.forEach(({ track }) => {
-            // uzupełniaj tylko raz (nie dokładaj w nieskończoność)
             if (track.__filled) return;
+
             fillRow(track, rowW, tileW);
-            // duplikacja tracka: robimy prosty trik — kopiujemy te same img jeszcze raz,
-            // aby -50% dawało płynną pętlę
-            const clone = track.cloneNode(true);
-            clone.classList.remove("reverse"); // reverse zostaje tylko przez klasę na tracku bazowym
-            // zamiast bawić się w idealny -50% dla dwóch tracków, dokładamy drugi identyczny track jako dzieci:
-            // prościej: kopiujemy obrazki jeszcze raz do tego samego tracka
+
+            // kopiujemy obrazki jeszcze raz do tego samego tracka, żeby -50% było płynne
             const imgs = Array.from(track.querySelectorAll("img"));
-            imgs.forEach(img => {
-              const c = img.cloneNode(true);
-              track.appendChild(c);
-            });
+            imgs.forEach(img => track.appendChild(img.cloneNode(true)));
 
             track.__filled = true;
           });
         }
 
         layoutFill();
-        ctx.on(window, "resize", () => {
-          // nie przebudowujemy całkiem, bo już jest wypełnione “na zapas”
-        });
 
         // ===== minigame logic =====
         let oxyVal = clamp01(CFG.OXY_START);
@@ -314,8 +334,6 @@
 
         function setOxyUI() {
           oxyFill.style.width = `${(oxyVal * 100).toFixed(1)}%`;
-
-          // subtelny efekt “duszenia”: im mniej tlenu, tym bardziej przygasza pasek
           const k = 1 - oxyVal;
           oxyFill.style.opacity = String(0.65 + (1 - k) * 0.35);
           oxyFill.style.filter = `saturate(${0.6 + oxyVal * 0.7})`;
@@ -346,9 +364,18 @@
         setMood();
         raf = requestAnimationFrame(tick);
 
-        // input
-        ctx.on(wrap, "pointerdown", (e) => { e.preventDefault(); pump(); }, { passive: false });
+        // input: tylko panel (nie blokuje gry) + klawiatura tylko gdy panel "uzbrojony"
+        let armed = false;
+
+        ctx.on(panel, "pointerdown", (e) => { e.preventDefault(); pump(); }, { passive: false });
+
+        ctx.on(panel, "mouseenter", () => { armed = true; });
+        ctx.on(panel, "mouseleave", () => { armed = false; });
+        ctx.on(panel, "focusin", () => { armed = true; });
+        ctx.on(panel, "focusout", () => { armed = false; });
+
         ctx.on(document, "keydown", (e) => {
+          if (!armed) return;
           const k = e.key;
           if (k === " " || k === "Enter") {
             e.preventDefault();
@@ -359,6 +386,7 @@
         // cleanup
         return () => {
           try { if (raf) cancelAnimationFrame(raf); } catch {}
+          try { panel.remove(); } catch {}
           try { wrap.remove(); } catch {}
           try { style.remove(); } catch {}
         };
